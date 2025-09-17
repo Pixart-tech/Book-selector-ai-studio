@@ -1,11 +1,25 @@
-<div align="center">
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+# Book Selector Application
 
-  <h1>Built with AI Studio</h2>
+This is a React-based web application for selecting school book packages.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Setup and Running
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+1.  **Install Dependencies:**
+    This project uses `react`, `react-dom`, and `react-router-dom`. If you are setting this up in a new project, you'll need to install them.
+    ```bash
+    npm install react react-dom react-router-dom
+    npm install --save-dev @types/react @types/react-dom
+    ```
 
-</div>
+2.  **Environment Variables:**
+    This project simulates environment variables. In a real-world scenario, you would create a `.env` file based on `.env.example`. For this version, constants are defined in `src/constants.ts`.
+
+3.  **Run the development server:**
+    Use a development server like Vite or Create React App to run the project.
+    ```bash
+    # Example using Vite
+    npm run dev
+    ```
+
+The application will be available at `http://localhost:5173` (or another port depending on your setup).
