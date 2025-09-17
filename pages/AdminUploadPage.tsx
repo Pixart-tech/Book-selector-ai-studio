@@ -15,6 +15,10 @@ const BookUploadRow: React.FC<{ book: Book, initialHasPdf: boolean, onUploadComp
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle', message: '' });
   const [hasPdf, setHasPdf] = useState(initialHasPdf);
 
+  useEffect(() => {
+    setHasPdf(initialHasPdf);
+  }, [initialHasPdf]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       if (e.target.files[0].type === 'application/pdf') {
@@ -56,6 +60,7 @@ const BookUploadRow: React.FC<{ book: Book, initialHasPdf: boolean, onUploadComp
     try {
       await deletePdf(book.id);
       setHasPdf(false); // Update UI to show upload controls
+      onUploadComplete();
     } catch (error) {
       console.error("Failed to delete PDF", error);
       setUploadState({ status: 'error', message: "Could not remove existing PDF." });
