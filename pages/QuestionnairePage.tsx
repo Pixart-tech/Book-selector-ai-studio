@@ -477,6 +477,7 @@ const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => 
 
 
 
+
     // --- RENDER METHODS ---
     const renderStepContent = () => {
         // Step definitions: 1: English, 2: Math, 3: Assessment, 4: Core, 5: Languages, 6: Class Summary
