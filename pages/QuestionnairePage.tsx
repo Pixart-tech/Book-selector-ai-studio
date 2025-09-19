@@ -41,13 +41,25 @@ const OPTIONS = {
 
 // --- UI COMPONENTS ---
 const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-    <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}>
-        <div className="flex items-center h-5"><input id={id} name={name} type="radio" value={value} checked={checked} onChange={onChange} className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"/></div>
+    <label
+        className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}
+    >
+        <div className="flex items-center h-5">
+            <input
+                id={id}
+                name={name}
+                type="radio"
+                value={value}
+                checked={checked}
+                onChange={onChange}
+                className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+            />
+        </div>
         <div className="ml-3 text-sm">
-            <label htmlFor={id} className="font-medium text-gray-900 cursor-pointer">{label}</label>
+            <span className="font-medium text-gray-900">{label}</span>
             {description && <p className="text-gray-500">{description}</p>}
         </div>
-    </div>
+    </label>
 );
 
 const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
