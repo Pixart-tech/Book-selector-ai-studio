@@ -789,42 +789,49 @@ const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => 
                     }
 
                     const summaryEntries = getClassSummaryEntries(classAnswers);
-                    return (<div key={className} className="bg-gray-50 border rounded-lg p-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-bold text-lg text-primary-700">{className}</h3>
-                            <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
-                                Edit
-                            </button>
-                        </div>
-                        <div className="mt-3 divide-y divide-gray-200">
-                            {summaryItems.map(item => (
-                                <div key={item.key} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-                                        <p className="text-sm text-gray-600">{item.value}</p>
-                                        {item.bookLabel && (
-                                            <div className="mt-1">
-                                                <BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => navigateToStep(index, item.step, { fromSummary: true })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
-                                            Edit
-                                        </button>
-                                        {item.canRemove && item.onRemove && (
-                                            <button onClick={item.onRemove} className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100">
-                                                Remove
+                    return (
+                        <div key={className} className="bg-gray-50 border rounded-lg p-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-bold text-lg text-primary-700">{className}</h3>
+                                <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                    Edit
+                                </button>
+                            </div>
+                            <div className="mt-3 divide-y divide-gray-200">
+                                {summaryItems.map(item => (
+                                    <div key={item.key} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                                            <p className="text-sm text-gray-600">{item.value}</p>
+                                            {item.bookLabel && (
+                                                <div className="mt-1">
+                                                    <BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => navigateToStep(index, item.step, { fromSummary: true })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                                Edit
                                             </button>
-                                        )}
+                                            {item.canRemove && item.onRemove && (
+                                                <button onClick={item.onRemove} className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100">
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            <div className="mt-3">
+                                <SummaryList
+                                    entries={summaryEntries}
+                                    containerClassName="bg-white"
+                                    itemClassName="px-4 py-2"
+                                    textClassName="text-sm text-gray-700"
+                                />
+                            </div>
                         </div>
-                    </div>);
-                  <div>
-                        <SummaryList entries={summaryEntries} containerClassName="bg-white mt-3" itemClassName="px-4 py-2" textClassName="text-sm text-gray-700" />
-                    </div>)
+                    );
 
                 })}
             </div>
