@@ -161,7 +161,17 @@ const SummaryList: React.FC<{ entries: SummaryEntry[]; containerClassName?: stri
 );
 
 // --- UI COMPONENTS ---
-const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+type RadioCardProps = {
+    id: string;
+    name: string;
+    value: string;
+    label: string;
+    description: string;
+    checked: boolean;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+};
+
+const RadioCard: React.FC<RadioCardProps> = ({ id, name, value, label, description, checked, onChange }) => (
     <label
         className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}
     >
@@ -183,7 +193,16 @@ const RadioCard = ({ id, name, value, label, description, checked, onChange }: {
     </label>
 );
 
-const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+type CheckboxCardProps = {
+    id: string;
+    name: string;
+    label: string;
+    description: string;
+    checked: boolean;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+};
+
+const CheckboxCard: React.FC<CheckboxCardProps> = ({ id, name, label, description, checked, onChange }) => (
     <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}>
         <div className="flex items-center h-5"><input id={id} name={name} type="checkbox" checked={checked} onChange={onChange} className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"/></div>
         <div className="ml-3 text-sm">
