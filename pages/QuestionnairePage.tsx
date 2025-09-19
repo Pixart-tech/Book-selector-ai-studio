@@ -650,13 +650,14 @@ const QuestionnairePage: React.FC = () => {
         switch (step) {
             case 1: // English
                 const showWritingFocus = currentClass === 'Nursery' && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
-                
+                const shouldAskForAssist = (currentClass === 'Nursery' || currentClass === 'LKG') && !!answers.englishSkill && answers.englishSkill !== 'Jolly Phonics';
+
                 const isSkillSelectionComplete = (() => {
                     if (!answers.englishSkill) return false;
-                    if (showWritingFocus) {
-                        return !!answers.englishSkillWritingFocus;
+                    if (showWritingFocus && !answers.englishSkillWritingFocus) {
+                        return false;
                     }
-                    if (currentClass === 'Nursery' || currentClass === 'LKG') {
+                    if (shouldAskForAssist) {
                         return answers.englishWorkbookAssist !== null;
                     }
                     // For UKG and Jolly Phonics, assist is not asked
@@ -677,7 +678,7 @@ const QuestionnairePage: React.FC = () => {
                             <RadioCard id="focus-caps-small" name="writingFocus" value="Caps & Small" label="Caps & Small" description="" checked={answers.englishSkillWritingFocus === 'Caps & Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps & Small' })} />
                         </div>
                     </div>)}
-                    {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.englishSkill && answers.englishSkill !== 'Jolly Phonics' && (<div className="mt-6 border-t pt-6">
+                    {shouldAskForAssist && (<div className="mt-6 border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">English Workbook Writing Assist</h3>
                         <div className="flex gap-4">
                             <RadioCard id="assist-yes" name="englishWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.englishWorkbookAssist === true} onChange={() => setAnswers({ englishWorkbookAssist: true })} />
