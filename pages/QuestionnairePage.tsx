@@ -486,11 +486,12 @@ const QuestionnairePage: React.FC = () => {
                     return { ...current, includeArt: false };
                 case 'language': {
                     const newSelections = current.languages.selections.filter((_, idx) => idx !== action.index);
+                    const newCount = Math.min(2, Math.max(0, newSelections.length)) as 0 | 1 | 2;
                     return {
                         ...current,
                         languages: {
                             ...current.languages,
-                            count: Math.max(0, newSelections.length), // ✅ safer than type cast
+                            count: newCount,
                             selections: newSelections,
                         },
                     };
