@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { QuestionnaireAnswers, LanguageSelection } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -69,15 +69,18 @@ const BookPreviewLink: React.FC<{ bookId: string | null; label: string }> = ({ b
     );
 };
 
+type ClassLevel = 'Nursery' | 'LKG' | 'UKG';
+
 // --- MAIN PAGE COMPONENT ---
 const QuestionnairePage: React.FC = () => {
     const { user } = useAuth();
     
     // --- STATE MANAGEMENT ---
-    const classOrder: Array<'Nursery' | 'LKG' | 'UKG'> = ['Nursery', 'LKG', 'UKG'];
+    const classOrder: ClassLevel[] = ['Nursery', 'LKG', 'UKG'];
     const [currentClassIndex, setCurrentClassIndex] = useState(0);
     const [step, setStep] = useState(1);
     const [showFinalSummary, setShowFinalSummary] = useState(false);
+    const [returningFromSummary, setReturningFromSummary] = useState(false);
     
     const initialAnswers: QuestionnaireAnswers = {
         classLevel: null,
@@ -93,7 +96,7 @@ const QuestionnairePage: React.FC = () => {
         languages: { count: 0, region: 'Other', selections: [] },
     };
 
-    const [allAnswers, setAllAnswers] = useState<Record<string, QuestionnaireAnswers>>({
+    const [allAnswers, setAllAnswers] = useState<Record<ClassLevel, QuestionnaireAnswers>>({
         Nursery: { ...initialAnswers, classLevel: 'Nursery' },
         LKG: { ...initialAnswers, classLevel: 'LKG', languages: { count: 0, region: 'Other', selections: [] } },
         UKG: { ...initialAnswers, classLevel: 'UKG', languages: { count: 0, region: 'Other', selections: [] } },
@@ -105,8 +108,18 @@ const QuestionnairePage: React.FC = () => {
     const currentClass = classOrder[currentClassIndex];
     const answers = allAnswers[currentClass];
     
+    const updateClassAnswers = useCallback((className: ClassLevel, updater: (current: QuestionnaireAnswers) => QuestionnaireAnswers) => {
+        setStatus('idle');
+        setSavedId(null);
+        setAllAnswers(prev => {
+            const currentAnswers = prev[className];
+            const nextAnswers = updater(currentAnswers);
+            return { ...prev, [className]: nextAnswers };
+        });
+    }, []);
+
     const setAnswers = (newAnswers: Partial<QuestionnaireAnswers>) => {
-        setAllAnswers(prev => ({ ...prev, [currentClass]: { ...prev[currentClass], ...newAnswers } }));
+        updateClassAnswers(currentClass, prevAnswers => ({ ...prevAnswers, ...newAnswers }));
     };
 
     // Effect to manage language presets
@@ -137,13 +150,20 @@ const QuestionnairePage: React.FC = () => {
 
         if (step < totalStepsPerClass) {
             setStep(step + 1);
+            return;
+        }
+
+        if (returningFromSummary) {
+            setShowFinalSummary(true);
+            setReturningFromSummary(false);
+            return;
+        }
+
+        if (currentClassIndex < classOrder.length - 1) {
+            setCurrentClassIndex(currentClassIndex + 1);
+            setStep(1);
         } else {
-            if (currentClassIndex < classOrder.length - 1) {
-                setCurrentClassIndex(currentClassIndex + 1);
-                setStep(1);
-            } else {
-                setShowFinalSummary(true);
-            }
+            setShowFinalSummary(true);
         }
     };
 
@@ -153,7 +173,13 @@ const QuestionnairePage: React.FC = () => {
             setShowFinalSummary(false);
             return;
         }
-        
+
+        if (returningFromSummary && step === 1) {
+            setShowFinalSummary(true);
+            setReturningFromSummary(false);
+            return;
+        }
+
         const isNurserySummaryStep = currentClass === 'Nursery' && step === 6;
         if (isNurserySummaryStep) {
             setStep(step - 2); // Skip back over language step
@@ -170,10 +196,17 @@ const QuestionnairePage: React.FC = () => {
         }
     };
 
-    const handleEditClass = (classIndex: number) => {
-        setShowFinalSummary(false);
+    const navigateToStep = (classIndex: number, targetStep: number, options: { fromSummary?: boolean } = {}) => {
+        setStatus('idle');
+        setSavedId(null);
         setCurrentClassIndex(classIndex);
-        setStep(1);
+        setStep(targetStep);
+        setReturningFromSummary(!!options.fromSummary);
+        setShowFinalSummary(false);
+    };
+
+    const handleEditClass = (classIndex: number) => {
+        navigateToStep(classIndex, 1, { fromSummary: true });
     };
     
     // --- DATA & LOGIC ---
@@ -195,39 +228,39 @@ const QuestionnairePage: React.FC = () => {
     }, [answers]);
 
     // --- BOOK ID GENERATION ---
-    const getBookId = useMemo(() => (subject: string): string | null => {
+    const getBookId = useCallback((subject: string, sourceAnswers: QuestionnaireAnswers = answers): string | null => {
         const book = CATALOG.find(b => {
-            if (b.class_level !== answers.classLevel || b.subject !== subject) return false;
+            if (b.class_level !== sourceAnswers.classLevel || b.subject !== subject) return false;
 
             let expectedVariant = '';
             switch (subject) {
                 case 'English Skill':
-                    if (!answers.englishSkill) return false;
-                    expectedVariant = answers.englishSkill;
-                    if (answers.englishSkill === 'LTI') {
+                    if (!sourceAnswers.englishSkill) return false;
+                    expectedVariant = sourceAnswers.englishSkill;
+                    if (sourceAnswers.englishSkill === 'LTI') {
                         expectedVariant = 'LTI (Caps)';
-                    } else if (answers.englishSkillWritingFocus) {
-                        expectedVariant = `${answers.englishSkill} (${answers.englishSkillWritingFocus})`;
+                    } else if (sourceAnswers.englishSkillWritingFocus) {
+                        expectedVariant = `${sourceAnswers.englishSkill} (${sourceAnswers.englishSkillWritingFocus})`;
                     }
                     return b.variant === expectedVariant;
 
                 case 'English Workbook': {
-                    if (!answers.englishSkill) return false;
+                    if (!sourceAnswers.englishSkill) return false;
 
-                    if (answers.classLevel === 'UKG' || answers.englishSkill === 'Jolly Phonics') {
-                        return b.variant === answers.englishSkill;
+                    if (sourceAnswers.classLevel === 'UKG' || sourceAnswers.englishSkill === 'Jolly Phonics') {
+                        return b.variant === sourceAnswers.englishSkill;
                     }
 
-                    if (answers.englishWorkbookAssist === null) return false;
-                    const assistText = answers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
+                    if (sourceAnswers.englishWorkbookAssist === null) return false;
+                    const assistText = sourceAnswers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
 
                     let skillVariant = '';
-                    if (answers.englishSkill === 'LTI') {
+                    if (sourceAnswers.englishSkill === 'LTI') {
                         skillVariant = 'LTI (Caps)';
-                    } else if (answers.englishSkillWritingFocus) {
-                        skillVariant = `${answers.englishSkill} (${answers.englishSkillWritingFocus})`;
+                    } else if (sourceAnswers.englishSkillWritingFocus) {
+                        skillVariant = `${sourceAnswers.englishSkill} (${sourceAnswers.englishSkillWritingFocus})`;
                     } else {
-                        skillVariant = answers.englishSkill;
+                        skillVariant = sourceAnswers.englishSkill;
                     }
 
                     if (!skillVariant.includes('(')) {
@@ -237,24 +270,24 @@ const QuestionnairePage: React.FC = () => {
                     }
                     return b.variant === expectedVariant;
                 }
-                
-                case 'Math Skill':
-                    return b.variant === answers.mathSkill;
-                case 'Math Workbook': {
-                    if (!answers.mathSkill) return false;
 
-                    if (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG') {
-                        if (answers.mathWorkbookAssist === null) return false;
-                        const assistText = answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
-                        expectedVariant = `${answers.mathSkill} (${assistText})`;
+                case 'Math Skill':
+                    return b.variant === sourceAnswers.mathSkill;
+                case 'Math Workbook': {
+                    if (!sourceAnswers.mathSkill) return false;
+
+                    if (sourceAnswers.classLevel === 'Nursery' || sourceAnswers.classLevel === 'LKG') {
+                        if (sourceAnswers.mathWorkbookAssist === null) return false;
+                        const assistText = sourceAnswers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
+                        expectedVariant = `${sourceAnswers.mathSkill} (${assistText})`;
                         return b.variant === expectedVariant;
                     }
 
-                    return b.variant === answers.mathSkill;
+                    return b.variant === sourceAnswers.mathSkill;
                 }
 
                 case 'Assessment':
-                    return b.variant === answers.assessment;
+                    return b.variant === sourceAnswers.assessment;
 
                 case 'EVS':
                 case 'Rhymes & Stories':
@@ -277,6 +310,47 @@ const QuestionnairePage: React.FC = () => {
         rhymes: getBookId('Rhymes & Stories'),
         art: getBookId('Art & Craft'),
     }), [answers, getBookId]);
+
+    type SummaryAction =
+        | { type: 'english' }
+        | { type: 'math' }
+        | { type: 'assessment' }
+        | { type: 'core'; subject: 'EVS' | 'Rhymes & Stories' | 'Art & Craft' };
+
+    const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => {
+        updateClassAnswers(className, current => {
+            switch (action.type) {
+                case 'english':
+                    return {
+                        ...current,
+                        englishSkill: null,
+                        englishSkillWritingFocus: null,
+                        englishWorkbookAssist: null,
+                    };
+                case 'math':
+                    return {
+                        ...current,
+                        mathSkill: null,
+                        mathWorkbookAssist: null,
+                    };
+                case 'assessment':
+                    return {
+                        ...current,
+                        assessment: null,
+                    };
+                case 'core':
+                    if (action.subject === 'EVS') {
+                        return { ...current, includeEVS: false };
+                    }
+                    if (action.subject === 'Rhymes & Stories') {
+                        return { ...current, includeRhymes: false };
+                    }
+                    return { ...current, includeArt: false };
+                default:
+                    return current;
+            }
+        });
+    };
 
 
     // --- RENDER METHODS ---
@@ -450,30 +524,166 @@ const QuestionnairePage: React.FC = () => {
             <div className="space-y-6">
                 {classOrder.map((className, index) => {
                     const classAnswers = allAnswers[className];
-                    const core = [classAnswers.includeEVS && 'EVS', classAnswers.includeRhymes && 'Rhymes', classAnswers.includeArt && 'Art'].filter(Boolean).join(', ');
-                    const languageSummary = classAnswers.languages.selections.map(s => s.language && s.variant ? `${s.language} (${s.variant})` : s.language).filter(Boolean).join(', ');
-                    const mathAssistSummary = (() => {
-                        if (!classAnswers.mathSkill) return null;
-                        if (classAnswers.classLevel !== 'Nursery' && classAnswers.classLevel !== 'LKG') return null;
+                    const classBookIds = {
+                        englishSkill: classAnswers.englishSkill ? getBookId('English Skill', classAnswers) : null,
+                        englishWorkbook: classAnswers.englishSkill ? getBookId('English Workbook', classAnswers) : null,
+                        mathSkill: classAnswers.mathSkill ? getBookId('Math Skill', classAnswers) : null,
+                        mathWorkbook: classAnswers.mathSkill ? getBookId('Math Workbook', classAnswers) : null,
+                        assessment: classAnswers.assessment ? getBookId('Assessment', classAnswers) : null,
+                        evs: classAnswers.includeEVS ? getBookId('EVS', classAnswers) : null,
+                        rhymes: classAnswers.includeRhymes ? getBookId('Rhymes & Stories', classAnswers) : null,
+                        art: classAnswers.includeArt ? getBookId('Art & Craft', classAnswers) : null,
+                    };
+
+                    const englishSkillValue = classAnswers.englishSkill
+                        ? classAnswers.englishSkillWritingFocus
+                            ? `${classAnswers.englishSkill} (${classAnswers.englishSkillWritingFocus})`
+                            : classAnswers.englishSkill
+                        : 'Not selected';
+
+                    const englishWorkbookValue = (() => {
+                        if (!classAnswers.englishSkill) return 'Requires English skill selection';
+                        if (classAnswers.classLevel === 'UKG' || classAnswers.englishSkill === 'Jolly Phonics') {
+                            return 'Matches English skill selection';
+                        }
+                        if (classAnswers.englishWorkbookAssist === null) return 'Assist not selected';
+                        return classAnswers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
+                    })();
+
+                    const mathWorkbookValue = (() => {
+                        if (!classAnswers.mathSkill) return 'Requires Math skill selection';
+                        if (classAnswers.classLevel !== 'Nursery' && classAnswers.classLevel !== 'LKG') {
+                            return 'Matches Math skill selection';
+                        }
                         if (classAnswers.mathWorkbookAssist === null) return 'Assist not selected';
                         return classAnswers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
                     })();
+
+                    const summaryItems: Array<{
+                        key: string;
+                        label: string;
+                        value: string;
+                        step: number;
+                        canRemove?: boolean;
+                        onRemove?: () => void;
+                        bookId?: string | null;
+                        bookLabel?: string;
+                    }> = [
+                        {
+                            key: 'english-skill',
+                            label: 'English Skill Book',
+                            value: englishSkillValue,
+                            step: 1,
+                            canRemove: !!classAnswers.englishSkill,
+                            onRemove: () => handleRemoveSelection(className, { type: 'english' }),
+                            bookId: classBookIds.englishSkill,
+                            bookLabel: 'View English Skill Book',
+                        },
+                        {
+                            key: 'english-workbook',
+                            label: 'English Workbook',
+                            value: englishWorkbookValue,
+                            step: 1,
+                            canRemove: !!classAnswers.englishSkill,
+                            onRemove: () => handleRemoveSelection(className, { type: 'english' }),
+                            bookId: classBookIds.englishWorkbook,
+                            bookLabel: 'View English Workbook',
+                        },
+                        {
+                            key: 'math-skill',
+                            label: 'Math Skill Book',
+                            value: classAnswers.mathSkill || 'Not selected',
+                            step: 2,
+                            canRemove: !!classAnswers.mathSkill,
+                            onRemove: () => handleRemoveSelection(className, { type: 'math' }),
+                            bookId: classBookIds.mathSkill,
+                            bookLabel: 'View Math Skill Book',
+                        },
+                        {
+                            key: 'math-workbook',
+                            label: 'Math Workbook',
+                            value: mathWorkbookValue,
+                            step: 2,
+                            canRemove: !!classAnswers.mathSkill,
+                            onRemove: () => handleRemoveSelection(className, { type: 'math' }),
+                            bookId: classBookIds.mathWorkbook,
+                            bookLabel: 'View Math Workbook',
+                        },
+                        {
+                            key: 'assessment',
+                            label: 'Assessment',
+                            value: classAnswers.assessment || 'Not selected',
+                            step: 3,
+                            canRemove: !!classAnswers.assessment,
+                            onRemove: () => handleRemoveSelection(className, { type: 'assessment' }),
+                            bookId: classBookIds.assessment,
+                            bookLabel: 'View Assessment Book',
+                        },
+                        {
+                            key: 'core-evs',
+                            label: 'EVS',
+                            value: classAnswers.includeEVS ? 'Included' : 'Not included',
+                            step: 4,
+                            canRemove: classAnswers.includeEVS,
+                            onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'EVS' }),
+                            bookId: classAnswers.includeEVS ? classBookIds.evs : null,
+                            bookLabel: 'View EVS Book',
+                        },
+                        {
+                            key: 'core-rhymes',
+                            label: 'Rhymes & Stories',
+                            value: classAnswers.includeRhymes ? 'Included' : 'Not included',
+                            step: 4,
+                            canRemove: classAnswers.includeRhymes,
+                            onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'Rhymes & Stories' }),
+                            bookId: classAnswers.includeRhymes ? classBookIds.rhymes : null,
+                            bookLabel: 'View Rhymes Book',
+                        },
+                        {
+                            key: 'core-art',
+                            label: 'Art & Craft',
+                            value: classAnswers.includeArt ? 'Included' : 'Not included',
+                            step: 4,
+                            canRemove: classAnswers.includeArt,
+                            onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'Art & Craft' }),
+                            bookId: classAnswers.includeArt ? classBookIds.art : null,
+                            bookLabel: 'View Art Book',
+                        },
+                    ];
+
                     return (<div key={className} className="bg-gray-50 border rounded-lg p-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-lg text-primary-700">{className}</h3>
-                             <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                            <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
                                 Edit
                             </button>
                         </div>
-                        <div className="text-sm space-y-1 mt-2">
-                           <p><strong>English:</strong> {classAnswers.englishSkill || 'N/A'} {classAnswers.englishSkillWritingFocus ? `(${classAnswers.englishSkillWritingFocus})` : ''}</p>
-                           <p><strong>Math:</strong> {classAnswers.mathSkill || 'N/A'}</p>
-                           {mathAssistSummary && <p><strong>Math Workbook Assist:</strong> {mathAssistSummary}</p>}
-                           <p><strong>Assessment:</strong> {classAnswers.assessment || 'N/A'}</p>
-                           <p><strong>Core:</strong> {core || 'None'}</p>
-                           {className !== 'Nursery' && <p><strong>Languages:</strong> {languageSummary || 'None'}</p>}
+                        <div className="mt-3 divide-y divide-gray-200">
+                            {summaryItems.map(item => (
+                                <div key={item.key} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                                        <p className="text-sm text-gray-600">{item.value}</p>
+                                        {item.bookLabel && (
+                                            <div className="mt-1">
+                                                <BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => navigateToStep(index, item.step, { fromSummary: true })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                            Edit
+                                        </button>
+                                        {item.canRemove && item.onRemove && (
+                                            <button onClick={item.onRemove} className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100">
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>)
+                    </div>);
                 })}
             </div>
             {status === 'idle' && <button onClick={handleSave} className="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">Save All Selections</button>}
@@ -515,7 +725,13 @@ const QuestionnairePage: React.FC = () => {
             Back
           </button>
           {!showFinalSummary && <button onClick={handleNext} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">
-            {step === totalStepsPerClass ? (currentClass === 'UKG' ? 'Finish & View Summary' : `Next: Configure ${classOrder[currentClassIndex+1]}`) : 'Next'}
+            {step === totalStepsPerClass
+                ? (returningFromSummary
+                    ? 'Return to Final Summary'
+                    : (currentClass === 'UKG'
+                        ? 'Finish & View Summary'
+                        : `Next: Configure ${classOrder[currentClassIndex+1]}`))
+                : 'Next'}
           </button>}
         </div>
       </div>
