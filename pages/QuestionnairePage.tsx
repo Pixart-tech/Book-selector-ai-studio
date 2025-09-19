@@ -429,51 +429,52 @@ const QuestionnairePage: React.FC = () => {
         | { type: 'core'; subject: 'EVS' | 'Rhymes & Stories' | 'Art & Craft' }
         | { type: 'language'; index: number };
 
-    const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => {
-        updateClassAnswers(className, current => {
-            switch (action.type) {
-                case 'english':
-                    return {
-                        ...current,
-                        englishSkill: null,
-                        englishSkillWritingFocus: null,
-                        englishWorkbookAssist: null,
-                    };
-                case 'math':
-                    return {
-                        ...current,
-                        mathSkill: null,
-                        mathWorkbookAssist: null,
-                    };
-                case 'assessment':
-                    return {
-                        ...current,
-                        assessment: null,
-                    };
-                case 'core':
-                    if (action.subject === 'EVS') {
-                        return { ...current, includeEVS: false };
-                    }
-                    if (action.subject === 'Rhymes & Stories') {
-                        return { ...current, includeRhymes: false };
-                    }
-                    return { ...current, includeArt: false };
-                case 'language': {
-                    const newSelections = current.languages.selections.filter((_, idx) => idx !== action.index);
-                    return {
-                        ...current,
-                        languages: {
-                            ...current.languages,
-                            count: newSelections.length as 0 | 1 | 2,
-                            selections: newSelections,
-                        },
-                    };
-                }
-                default:
-                    return current;
-            }
-        });
-    };
+const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => {
+  updateClassAnswers(className, current => {
+    switch (action.type) {
+      case 'english':
+        return {
+          ...current,
+          englishSkill: null,
+          englishSkillWritingFocus: null,
+          englishWorkbookAssist: null,
+        };
+      case 'math':
+        return {
+          ...current,
+          mathSkill: null,
+          mathWorkbookAssist: null,
+        };
+      case 'assessment':
+        return {
+          ...current,
+          assessment: null,
+        };
+      case 'core':
+        if (action.subject === 'EVS') {
+          return { ...current, includeEVS: false };
+        }
+        if (action.subject === 'Rhymes & Stories') {
+          return { ...current, includeRhymes: false };
+        }
+        return { ...current, includeArt: false };
+      case 'language': {
+        const newSelections = current.languages.selections.filter((_, idx) => idx !== action.index);
+        return {
+          ...current,
+          languages: {
+            ...current.languages,
+            count: Math.max(0, newSelections.length), // ✅ safer than type cast
+            selections: newSelections,
+          },
+        };
+      }
+      default:
+        return current;
+    }
+  });
+};
+
 
 
     // --- RENDER METHODS ---
