@@ -272,6 +272,11 @@ const QuestionnairePage: React.FC = () => {
 
     // --- NAVIGATION ---
     const totalStepsPerClass = 6;
+
+    const returnToSummary = useCallback(() => {
+        setShowFinalSummary(true);
+        setReturningFromSummary(false);
+    }, [setShowFinalSummary, setReturningFromSummary]);
     const handleNext = () => {
         if (showFinalSummary) return;
 
@@ -287,8 +292,7 @@ const QuestionnairePage: React.FC = () => {
         }
 
         if (returningFromSummary) {
-            setShowFinalSummary(true);
-            setReturningFromSummary(false);
+            returnToSummary();
             return;
         }
 
@@ -308,8 +312,7 @@ const QuestionnairePage: React.FC = () => {
         }
 
         if (returningFromSummary && step === 1) {
-            setShowFinalSummary(true);
-            setReturningFromSummary(false);
+            returnToSummary();
             return;
         }
 
@@ -910,19 +913,31 @@ const QuestionnairePage: React.FC = () => {
             {showFinalSummary ? renderFinalSummary() : renderStepContent()}
         </div>
 
-        <div className="mt-8 flex justify-between">
+        <div className="mt-8 flex justify-between items-center">
           <button onClick={handleBack} disabled={currentClassIndex === 0 && step === 1 && !showFinalSummary} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
             Back
           </button>
-          {!showFinalSummary && <button onClick={handleNext} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">
-            {step === totalStepsPerClass
-                ? (returningFromSummary
-                    ? 'Return to Final Summary'
-                    : (currentClass === 'UKG'
-                        ? 'Finish & View Summary'
-                        : `Next: Configure ${classOrder[currentClassIndex+1]}`))
-                : 'Next'}
-          </button>}
+          <div className="flex gap-3">
+            {returningFromSummary && !showFinalSummary && (
+              <button
+                onClick={returnToSummary}
+                className="border border-primary-600 text-primary-600 px-6 py-2 rounded-md hover:bg-primary-50"
+              >
+                Return to Final Summary
+              </button>
+            )}
+            {!showFinalSummary && (
+              <button onClick={handleNext} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">
+                {step === totalStepsPerClass
+                    ? (returningFromSummary
+                        ? 'Next'
+                        : (currentClass === 'UKG'
+                            ? 'Finish & View Summary'
+                            : `Next: Configure ${classOrder[currentClassIndex+1]}`))
+                    : 'Next'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>);
