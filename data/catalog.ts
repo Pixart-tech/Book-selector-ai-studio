@@ -34,9 +34,12 @@ export const CATALOG: Book[] = [
   { id: 'NUR-MATH-SKILL-1-10', class_level: 'Nursery', subject: 'Math Skill', language: null, variant: '1–10', price_inr: 250 },
   { id: 'NUR-MATH-SKILL-1-20', class_level: 'Nursery', subject: 'Math Skill', language: null, variant: '1–20', price_inr: 250 },
   { id: 'NUR-MATH-SKILL-1-50', class_level: 'Nursery', subject: 'Math Skill', language: null, variant: '1–50', price_inr: 250 },
-  { id: 'NUR-MATH-WB-1-10', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–10', price_inr: 200 },
-  { id: 'NUR-MATH-WB-1-20', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–20', price_inr: 200 },
-  { id: 'NUR-MATH-WB-1-50', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–50', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-10-N', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–10 (Normal)', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-10-A', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–10 (Writing Assist)', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-20-N', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–20 (Normal)', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-20-A', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–20 (Writing Assist)', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-50-N', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–50 (Normal)', price_inr: 200 },
+  { id: 'NUR-MATH-WB-1-50-A', class_level: 'Nursery', subject: 'Math Workbook', language: null, variant: '1–50 (Writing Assist)', price_inr: 200 },
   
   // Nursery Core
   { id: 'NUR-EVS', class_level: 'Nursery', subject: 'EVS', language: null, variant: 'Standard', price_inr: 300 },
@@ -59,9 +62,12 @@ export const CATALOG: Book[] = [
   { id: 'LKG-MATH-SKILL-1-100', class_level: 'LKG', subject: 'Math Skill', language: null, variant: '1–100', price_inr: 250 },
   { id: 'LKG-MATH-SKILL-1-100-NAMES', class_level: 'LKG', subject: 'Math Skill', language: null, variant: '1–100 & 1–50 number names', price_inr: 250 },
   { id: 'LKG-MATH-SKILL-1-50-TENS', class_level: 'LKG', subject: 'Math Skill', language: null, variant: '1–50 tens & ones', price_inr: 250 },
-  { id: 'LKG-MATH-WB-1-100', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100', price_inr: 200 },
-  { id: 'LKG-MATH-WB-1-100-NAMES', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100 & 1–50 number names', price_inr: 200 },
-  { id: 'LKG-MATH-WB-1-50-TENS', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–50 tens & ones', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-100-N', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100 (Normal)', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-100-A', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100 (Writing Assist)', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-100-NAMES-N', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100 & 1–50 number names (Normal)', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-100-NAMES-A', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–100 & 1–50 number names (Writing Assist)', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-50-TENS-N', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–50 tens & ones (Normal)', price_inr: 200 },
+  { id: 'LKG-MATH-WB-1-50-TENS-A', class_level: 'LKG', subject: 'Math Workbook', language: null, variant: '1–50 tens & ones (Writing Assist)', price_inr: 200 },
 
   // LKG Core
   { id: 'LKG-EVS', class_level: 'LKG', subject: 'EVS', language: null, variant: 'Standard', price_inr: 250 },

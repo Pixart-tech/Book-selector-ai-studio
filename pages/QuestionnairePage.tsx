@@ -80,8 +80,16 @@ const QuestionnairePage: React.FC = () => {
     const [showFinalSummary, setShowFinalSummary] = useState(false);
     
     const initialAnswers: QuestionnaireAnswers = {
-        classLevel: null, englishSkill: null, englishSkillWritingFocus: null, englishWorkbookAssist: null,
-        mathSkill: null, assessment: null, includeEVS: true, includeRhymes: true, includeArt: true,
+        classLevel: null,
+        englishSkill: null,
+        englishSkillWritingFocus: null,
+        englishWorkbookAssist: null,
+        mathWorkbookAssist: null,
+        mathSkill: null,
+        assessment: null,
+        includeEVS: true,
+        includeRhymes: true,
+        includeArt: true,
         languages: { count: 0, region: 'Other', selections: [] },
     };
 
@@ -231,8 +239,19 @@ const QuestionnairePage: React.FC = () => {
                 }
                 
                 case 'Math Skill':
-                case 'Math Workbook':
                     return b.variant === answers.mathSkill;
+                case 'Math Workbook': {
+                    if (!answers.mathSkill) return false;
+
+                    if (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG') {
+                        if (answers.mathWorkbookAssist === null) return false;
+                        const assistText = answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
+                        expectedVariant = `${answers.mathSkill} (${assistText})`;
+                        return b.variant === expectedVariant;
+                    }
+
+                    return b.variant === answers.mathSkill;
+                }
 
                 case 'Assessment':
                     return b.variant === answers.assessment;
@@ -311,9 +330,18 @@ const QuestionnairePage: React.FC = () => {
                     <p className="text-gray-600 mb-2">The Math Workbook will automatically match this selection.</p>
                     <p className="text-sm text-gray-500 mb-4">All variants include pre-math concepts, basic shapes and colours.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {OPTIONS.mathSkill[currentClass].map(skill => (<RadioCard key={skill} id={`math-${skill}`} name="mathSkill" value={skill} label={skill} description="" checked={answers.mathSkill === skill} onChange={e => setAnswers({ mathSkill: e.target.value })} />))}
+                        {OPTIONS.mathSkill[currentClass].map(skill => (<RadioCard key={skill} id={`math-${skill}`} name="mathSkill" value={skill} label={skill} description="" checked={answers.mathSkill === skill} onChange={e => setAnswers({ mathSkill: e.target.value, mathWorkbookAssist: null })} />))}
                     </div>
-                    {answers.mathSkill && <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
+                    {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill && (
+                        <div className="mt-6 border-t pt-6">
+                            <h3 className="text-lg font-semibold mb-2">Math Workbook Writing Assist</h3>
+                            <div className="flex gap-4">
+                                <RadioCard id="math-assist-yes" name="mathWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.mathWorkbookAssist === true} onChange={() => setAnswers({ mathWorkbookAssist: true })} />
+                                <RadioCard id="math-assist-no" name="mathWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.mathWorkbookAssist === false} onChange={() => setAnswers({ mathWorkbookAssist: false })} />
+                            </div>
+                        </div>
+                    )}
+                    {answers.mathSkill && ((currentClass !== 'Nursery' && currentClass !== 'LKG') || answers.mathWorkbookAssist !== null) && <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
                         <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" />
                         <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" />
                     </div>}
@@ -393,12 +421,19 @@ const QuestionnairePage: React.FC = () => {
             case 6: // Class Summary
                 const coreSubjects = [answers.includeEVS && 'EVS', answers.includeRhymes && 'Rhymes & Stories', answers.includeArt && 'Art & Craft'].filter(Boolean).join(', ');
                 const languageSummary = answers.languages.selections.map(s => s.language && s.variant ? `${s.language} (${s.variant})` : s.language).filter(Boolean).join(', ');
+                const mathAssistSummary = (() => {
+                    if (!answers.mathSkill) return null;
+                    if (currentClass !== 'Nursery' && currentClass !== 'LKG') return null;
+                    if (answers.mathWorkbookAssist === null) return 'Assist not selected';
+                    return answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
+                })();
                 return (<div>
                     <h2 className="text-xl font-semibold mb-2">{currentClass} Selection Summary</h2>
                     <p className="text-gray-600 mb-4">Review your selections for this class. Click "Next" to proceed.</p>
                     <div className="bg-white border rounded-lg p-6 space-y-2 divide-y text-gray-700">
                         <p className="pt-2"><strong>English Skill:</strong> {answers.englishSkill || 'Not selected'} {answers.englishSkillWritingFocus ? `(${answers.englishSkillWritingFocus})` : ''}</p>
                         <p className="pt-2"><strong>Math Skill:</strong> {answers.mathSkill || 'Not selected'}</p>
+                        {mathAssistSummary && <p className="pt-2"><strong>Math Workbook Assist:</strong> {mathAssistSummary}</p>}
                         <p className="pt-2"><strong>Assessment:</strong> {answers.assessment || 'Not selected'}</p>
                         <p className="pt-2"><strong>Core Subjects:</strong> {coreSubjects || 'None'}</p>
                         {currentClass !== 'Nursery' && <p className="pt-2"><strong>Languages:</strong> {languageSummary || 'None'}</p>}
@@ -417,6 +452,12 @@ const QuestionnairePage: React.FC = () => {
                     const classAnswers = allAnswers[className];
                     const core = [classAnswers.includeEVS && 'EVS', classAnswers.includeRhymes && 'Rhymes', classAnswers.includeArt && 'Art'].filter(Boolean).join(', ');
                     const languageSummary = classAnswers.languages.selections.map(s => s.language && s.variant ? `${s.language} (${s.variant})` : s.language).filter(Boolean).join(', ');
+                    const mathAssistSummary = (() => {
+                        if (!classAnswers.mathSkill) return null;
+                        if (classAnswers.classLevel !== 'Nursery' && classAnswers.classLevel !== 'LKG') return null;
+                        if (classAnswers.mathWorkbookAssist === null) return 'Assist not selected';
+                        return classAnswers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
+                    })();
                     return (<div key={className} className="bg-gray-50 border rounded-lg p-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-lg text-primary-700">{className}</h3>
@@ -427,6 +468,7 @@ const QuestionnairePage: React.FC = () => {
                         <div className="text-sm space-y-1 mt-2">
                            <p><strong>English:</strong> {classAnswers.englishSkill || 'N/A'} {classAnswers.englishSkillWritingFocus ? `(${classAnswers.englishSkillWritingFocus})` : ''}</p>
                            <p><strong>Math:</strong> {classAnswers.mathSkill || 'N/A'}</p>
+                           {mathAssistSummary && <p><strong>Math Workbook Assist:</strong> {mathAssistSummary}</p>}
                            <p><strong>Assessment:</strong> {classAnswers.assessment || 'N/A'}</p>
                            <p><strong>Core:</strong> {core || 'None'}</p>
                            {className !== 'Nursery' && <p><strong>Languages:</strong> {languageSummary || 'None'}</p>}
