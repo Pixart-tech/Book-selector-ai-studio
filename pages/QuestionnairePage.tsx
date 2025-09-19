@@ -80,6 +80,7 @@ const QuestionnairePage: React.FC = () => {
     const [currentClassIndex, setCurrentClassIndex] = useState(0);
     const [step, setStep] = useState(1);
     const [showFinalSummary, setShowFinalSummary] = useState(false);
+    const [returningFromSummary, setReturningFromSummary] = useState(false);
     
     const initialAnswers: QuestionnaireAnswers = {
         classLevel: null,
@@ -149,13 +150,20 @@ const QuestionnairePage: React.FC = () => {
 
         if (step < totalStepsPerClass) {
             setStep(step + 1);
+            return;
+        }
+
+        if (returningFromSummary) {
+            setShowFinalSummary(true);
+            setReturningFromSummary(false);
+            return;
+        }
+
+        if (currentClassIndex < classOrder.length - 1) {
+            setCurrentClassIndex(currentClassIndex + 1);
+            setStep(1);
         } else {
-            if (currentClassIndex < classOrder.length - 1) {
-                setCurrentClassIndex(currentClassIndex + 1);
-                setStep(1);
-            } else {
-                setShowFinalSummary(true);
-            }
+            setShowFinalSummary(true);
         }
     };
 
@@ -165,7 +173,13 @@ const QuestionnairePage: React.FC = () => {
             setShowFinalSummary(false);
             return;
         }
-        
+
+        if (returningFromSummary && step === 1) {
+            setShowFinalSummary(true);
+            setReturningFromSummary(false);
+            return;
+        }
+
         const isNurserySummaryStep = currentClass === 'Nursery' && step === 6;
         if (isNurserySummaryStep) {
             setStep(step - 2); // Skip back over language step
@@ -182,16 +196,17 @@ const QuestionnairePage: React.FC = () => {
         }
     };
 
-    const navigateToStep = (classIndex: number, targetStep: number) => {
+    const navigateToStep = (classIndex: number, targetStep: number, options: { fromSummary?: boolean } = {}) => {
         setStatus('idle');
         setSavedId(null);
-        setShowFinalSummary(false);
         setCurrentClassIndex(classIndex);
         setStep(targetStep);
+        setReturningFromSummary(!!options.fromSummary);
+        setShowFinalSummary(false);
     };
 
     const handleEditClass = (classIndex: number) => {
-        navigateToStep(classIndex, 1);
+        navigateToStep(classIndex, 1, { fromSummary: true });
     };
     
     // --- DATA & LOGIC ---
@@ -677,7 +692,7 @@ const QuestionnairePage: React.FC = () => {
                     return (<div key={className} className="bg-gray-50 border rounded-lg p-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-lg text-primary-700">{className}</h3>
-                             <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                            <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
                                 Edit
                             </button>
                         </div>
@@ -694,7 +709,7 @@ const QuestionnairePage: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => navigateToStep(index, item.step)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                        <button onClick={() => navigateToStep(index, item.step, { fromSummary: true })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
                                             Edit
                                         </button>
                                         {item.canRemove && item.onRemove && (
@@ -748,7 +763,13 @@ const QuestionnairePage: React.FC = () => {
             Back
           </button>
           {!showFinalSummary && <button onClick={handleNext} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">
-            {step === totalStepsPerClass ? (currentClass === 'UKG' ? 'Finish & View Summary' : `Next: Configure ${classOrder[currentClassIndex+1]}`) : 'Next'}
+            {step === totalStepsPerClass
+                ? (returningFromSummary
+                    ? 'Return to Final Summary'
+                    : (currentClass === 'UKG'
+                        ? 'Finish & View Summary'
+                        : `Next: Configure ${classOrder[currentClassIndex+1]}`))
+                : 'Next'}
           </button>}
         </div>
       </div>
