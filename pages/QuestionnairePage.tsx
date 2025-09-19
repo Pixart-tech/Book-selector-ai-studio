@@ -39,15 +39,126 @@ const OPTIONS = {
   }
 };
 
+type SummaryEntry = { label: string; value: string };
+
+const formatEnglishSkillSummary = (answers: QuestionnaireAnswers): string => {
+    if (!answers.englishSkill) return 'Not selected';
+    return answers.englishSkillWritingFocus
+        ? `${answers.englishSkill} (${answers.englishSkillWritingFocus})`
+        : answers.englishSkill;
+};
+
+const getEnglishWorkbookSummary = (answers: QuestionnaireAnswers): string => {
+    if (!answers.englishSkill) return 'Not selected';
+
+    if (answers.classLevel === 'UKG' || answers.englishSkill === 'Jolly Phonics') {
+        return answers.englishSkill;
+    }
+
+    if (answers.englishWorkbookAssist === null) {
+        return 'Writing Assist not selected';
+    }
+
+    let skillVariant = answers.englishSkill;
+    if (answers.englishSkill === 'LTI') {
+        skillVariant = 'LTI (Caps)';
+    } else if (answers.englishSkillWritingFocus) {
+        skillVariant = `${answers.englishSkill} (${answers.englishSkillWritingFocus})`;
+    }
+
+    const assistText = answers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
+    if (!skillVariant.includes('(')) {
+        return `${skillVariant} (${assistText})`;
+    }
+
+    return `${skillVariant.slice(0, -1)}, ${assistText})`;
+};
+
+const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
+    if (!answers.mathSkill) return 'Not selected';
+
+    if (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG') {
+        if (answers.mathWorkbookAssist === null) {
+            return 'Writing Assist not selected';
+        }
+
+        const assistText = answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
+        return `${answers.mathSkill} (${assistText})`;
+    }
+
+    return answers.mathSkill;
+};
+
+const getClassSummaryEntries = (answers: QuestionnaireAnswers): SummaryEntry[] => {
+    const entries: SummaryEntry[] = [
+        { label: 'English Skill', value: formatEnglishSkillSummary(answers) },
+        { label: 'English Workbook', value: getEnglishWorkbookSummary(answers) },
+        { label: 'Math Skill', value: answers.mathSkill || 'Not selected' },
+        { label: 'Math Workbook', value: getMathWorkbookSummary(answers) },
+        { label: 'Assessment', value: answers.assessment || 'Not selected' },
+        { label: 'EVS', value: answers.includeEVS ? 'Included' : 'Not included' },
+        { label: 'Rhymes & Stories', value: answers.includeRhymes ? 'Included' : 'Not included' },
+        { label: 'Art & Craft', value: answers.includeArt ? 'Included' : 'Not included' },
+    ];
+
+    if (answers.classLevel && answers.classLevel !== 'Nursery') {
+        const languages = answers.languages.selections
+            .map(selection => {
+                if (!selection.language) return null;
+                return selection.variant
+                    ? `${selection.language} (${selection.variant})`
+                    : `${selection.language} (Variant pending)`;
+            })
+            .filter((value): value is string => Boolean(value));
+
+        entries.push({
+            label: 'Languages',
+            value: languages.length ? languages.join(', ') : 'None selected',
+        });
+    }
+
+    return entries;
+};
+
+const SummaryList: React.FC<{ entries: SummaryEntry[]; containerClassName?: string; itemClassName?: string; textClassName?: string }> = ({
+    entries,
+    containerClassName = '',
+    itemClassName = 'px-6 py-3',
+    textClassName = 'text-gray-700',
+}) => (
+    <div className={`rounded-lg border border-gray-200 overflow-hidden ${containerClassName}`}>
+        <dl className={`divide-y divide-gray-200 ${textClassName}`}>
+            {entries.map(({ label, value }, index) => (
+                <div key={`${label}-${index}`} className={`${itemClassName} sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start`}>
+                    <dt className="font-semibold text-gray-900">{label}</dt>
+                    <dd className="mt-1 sm:mt-0 sm:col-span-2">{value}</dd>
+                </div>
+            ))}
+        </dl>
+    </div>
+);
+
 // --- UI COMPONENTS ---
 const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-    <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}>
-        <div className="flex items-center h-5"><input id={id} name={name} type="radio" value={value} checked={checked} onChange={onChange} className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"/></div>
+    <label
+        className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}
+    >
+        <div className="flex items-center h-5">
+            <input
+                id={id}
+                name={name}
+                type="radio"
+                value={value}
+                checked={checked}
+                onChange={onChange}
+                className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+            />
+        </div>
         <div className="ml-3 text-sm">
-            <label htmlFor={id} className="font-medium text-gray-900 cursor-pointer">{label}</label>
+            <span className="font-medium text-gray-900">{label}</span>
             {description && <p className="text-gray-500">{description}</p>}
         </div>
-    </div>
+    </label>
 );
 
 const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
@@ -505,25 +616,11 @@ const QuestionnairePage: React.FC = () => {
                     ))}
                 </div>);
             case 6: // Class Summary
-                const coreSubjects = [answers.includeEVS && 'EVS', answers.includeRhymes && 'Rhymes & Stories', answers.includeArt && 'Art & Craft'].filter(Boolean).join(', ');
-                const languageSummary = answers.languages.selections.map(s => s.language && s.variant ? `${s.language} (${s.variant})` : s.language).filter(Boolean).join(', ');
-                const mathAssistSummary = (() => {
-                    if (!answers.mathSkill) return null;
-                    if (currentClass !== 'Nursery' && currentClass !== 'LKG') return null;
-                    if (answers.mathWorkbookAssist === null) return 'Assist not selected';
-                    return answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
-                })();
+                const summaryEntries = getClassSummaryEntries(answers);
                 return (<div>
                     <h2 className="text-xl font-semibold mb-2">{currentClass} Selection Summary</h2>
                     <p className="text-gray-600 mb-4">Review your selections for this class. Click "Next" to proceed.</p>
-                    <div className="bg-white border rounded-lg p-6 space-y-2 divide-y text-gray-700">
-                        <p className="pt-2"><strong>English Skill:</strong> {answers.englishSkill || 'Not selected'} {answers.englishSkillWritingFocus ? `(${answers.englishSkillWritingFocus})` : ''}</p>
-                        <p className="pt-2"><strong>Math Skill:</strong> {answers.mathSkill || 'Not selected'}</p>
-                        {mathAssistSummary && <p className="pt-2"><strong>Math Workbook Assist:</strong> {mathAssistSummary}</p>}
-                        <p className="pt-2"><strong>Assessment:</strong> {answers.assessment || 'Not selected'}</p>
-                        <p className="pt-2"><strong>Core Subjects:</strong> {coreSubjects || 'None'}</p>
-                        {currentClass !== 'Nursery' && <p className="pt-2"><strong>Languages:</strong> {languageSummary || 'None'}</p>}
-                    </div>
+                    <SummaryList entries={summaryEntries} containerClassName="bg-white" textClassName="text-gray-700" />
                 </div>);
             default: return null;
         }
@@ -689,6 +786,7 @@ const QuestionnairePage: React.FC = () => {
                         }
                     }
 
+                    const summaryEntries = getClassSummaryEntries(classAnswers);
                     return (<div key={className} className="bg-gray-50 border rounded-lg p-4">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-lg text-primary-700">{className}</h3>
@@ -722,6 +820,10 @@ const QuestionnairePage: React.FC = () => {
                             ))}
                         </div>
                     </div>);
+                  <div>
+                        <SummaryList entries={summaryEntries} containerClassName="bg-white mt-3" itemClassName="px-4 py-2" textClassName="text-sm text-gray-700" />
+                    </div>)
+
                 })}
             </div>
             {status === 'idle' && <button onClick={handleSave} className="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">Save All Selections</button>}
