@@ -796,13 +796,16 @@ const QuestionnairePage: React.FC = () => {
                                 <p className="text-sm text-gray-600">{item.value}</p>
                                 {item.bookLabel && <div className="mt-1"><BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} /></div>}
                             </div>
-                            {item.canRemove && item.onRemove && (
-                                <div className="flex gap-2">
+                            <div className="flex gap-2 sm:justify-end">
+                                <button onClick={() => navigateToStep(currentClassIndex, item.step)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                    Edit
+                                </button>
+                                {item.canRemove && item.onRemove && (
                                     <button onClick={item.onRemove} className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100">
                                         Remove
                                     </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>))}
                     </div>
                     <div className="mt-4">
