@@ -18,6 +18,7 @@ export interface QuestionnaireAnswers {
   englishSkill: string | null;
   englishSkillWritingFocus: 'Caps' | 'Small' | 'Caps & Small' | null;
   englishWorkbookAssist: boolean | null;
+  mathWorkbookAssist: boolean | null;
   mathSkill: string | null;
   assessment: 'Termwise' | 'Annual' | 'Annual (no marks)' | null;
   includeEVS: boolean;
