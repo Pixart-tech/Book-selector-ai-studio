@@ -39,8 +39,6 @@ const OPTIONS = {
   }
 };
 
-type SummaryEntry = { label: string; value: string };
-
 type SummaryItem = {
     key: string;
     label: string;
@@ -110,55 +108,6 @@ const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
 
     return answers.mathSkill;
 };
-
-const getClassSummaryEntries = (answers: QuestionnaireAnswers): SummaryEntry[] => {
-    const entries: SummaryEntry[] = [
-        { label: 'English Skill', value: formatEnglishSkillSummary(answers) },
-        { label: 'English Workbook', value: getEnglishWorkbookSummary(answers) },
-        { label: 'Math Skill', value: answers.mathSkill || 'Not selected' },
-        { label: 'Math Workbook', value: getMathWorkbookSummary(answers) },
-        { label: 'Assessment', value: answers.assessment || 'Not selected' },
-        { label: 'EVS', value: answers.includeEVS ? 'Included' : 'Not included' },
-        { label: 'Rhymes & Stories', value: answers.includeRhymes ? 'Included' : 'Not included' },
-        { label: 'Art & Craft', value: answers.includeArt ? 'Included' : 'Not included' },
-    ];
-
-    if (answers.classLevel && answers.classLevel !== 'Nursery') {
-        const languages = answers.languages.selections
-            .map(selection => {
-                if (!selection.language) return null;
-                return selection.variant
-                    ? `${selection.language} (${selection.variant})`
-                    : `${selection.language} (Variant pending)`;
-            })
-            .filter((value): value is string => Boolean(value));
-
-        entries.push({
-            label: 'Languages',
-            value: languages.length ? languages.join(', ') : 'None selected',
-        });
-    }
-
-    return entries;
-};
-
-const SummaryList: React.FC<{ entries: SummaryEntry[]; containerClassName?: string; itemClassName?: string; textClassName?: string }> = ({
-    entries,
-    containerClassName = '',
-    itemClassName = 'px-6 py-3',
-    textClassName = 'text-gray-700',
-}) => (
-    <div className={`rounded-lg border border-gray-200 overflow-hidden ${containerClassName}`}>
-        <dl className={`divide-y divide-gray-200 ${textClassName}`}>
-            {entries.map(({ label, value }, index) => (
-                <div key={`${label}-${index}`} className={`${itemClassName} sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start`}>
-                    <dt className="font-semibold text-gray-900">{label}</dt>
-                    <dd className="mt-1 sm:mt-0 sm:col-span-2">{value}</dd>
-                </div>
-            ))}
-        </dl>
-    </div>
-);
 
 // --- UI COMPONENTS ---
 const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
@@ -786,7 +735,6 @@ const QuestionnairePage: React.FC = () => {
                     ))}
                 </div>);
             case 6: // Class Summary
-                const summaryEntries = getClassSummaryEntries(answers);
                 const summaryItems = buildSummaryItems(currentClass, answers, bookIds);
                 return (<div>
                     <h2 className="text-xl font-semibold mb-2">{currentClass} Selection Summary</h2>
@@ -809,9 +757,6 @@ const QuestionnairePage: React.FC = () => {
                                 )}
                             </div>
                         </div>))}
-                    </div>
-                    <div className="mt-4">
-                        <SummaryList entries={summaryEntries} containerClassName="bg-white" textClassName="text-gray-700" />
                     </div>
                 </div>);
             default: return null;
@@ -837,7 +782,6 @@ const QuestionnairePage: React.FC = () => {
                     };
 
                     const summaryItems = buildSummaryItems(className, classAnswers, classBookIds);
-                    const summaryEntries = getClassSummaryEntries(classAnswers);
                     return (
                         <div key={className} className="bg-gray-50 border rounded-lg p-4">
                             <div className="flex justify-between items-center">
@@ -870,14 +814,6 @@ const QuestionnairePage: React.FC = () => {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                            <div className="mt-3">
-                                <SummaryList
-                                    entries={summaryEntries}
-                                    containerClassName="bg-white"
-                                    itemClassName="px-4 py-2"
-                                    textClassName="text-sm text-gray-700"
-                                />
                             </div>
                         </div>
                     );
