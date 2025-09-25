@@ -26,7 +26,6 @@ export interface QuestionnaireAnswers {
   includeArt: boolean;
   languages: {
     count: 0 | 1 | 2;
-    region: 'Karnataka' | 'Tamil Nadu' | 'Other';
     selections: LanguageSelection[];
   };
 }

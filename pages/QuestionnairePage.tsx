@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { QuestionnaireAnswers, LanguageSelection } from '../types';
+import { QuestionnaireAnswers } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { saveSelection } from '../services/api';
 import { CATALOG } from '../data/catalog';
@@ -25,16 +25,10 @@ const OPTIONS = {
   ],
   languageOptions: {
     count: ['None', 'One', 'Two'],
-    regions: ['Karnataka', 'Tamil Nadu', 'Other'],
     list: ['Kannada', 'Hindi', 'Tamil', 'Telugu', 'Marathi'],
     variants: {
         LKG: ['Swara V1', 'Swara V2'],
         UKG: ['Swara & Vyanjana V1', 'Swara & Vyanjana V2']
-    },
-    presets: {
-        'Karnataka': ['Kannada', 'Hindi'],
-        'Tamil Nadu': ['Tamil', 'Hindi'],
-        'Other': []
     }
   }
 };
@@ -175,13 +169,13 @@ const QuestionnairePage: React.FC = () => {
         includeEVS: true,
         includeRhymes: true,
         includeArt: true,
-        languages: { count: 0, region: 'Other', selections: [] },
+        languages: { count: 0, selections: [] },
     };
 
     const [allAnswers, setAllAnswers] = useState<Record<ClassLevel, QuestionnaireAnswers>>({
         Nursery: { ...initialAnswers, classLevel: 'Nursery' },
-        LKG: { ...initialAnswers, classLevel: 'LKG', languages: { count: 0, region: 'Other', selections: [] } },
-        UKG: { ...initialAnswers, classLevel: 'UKG', languages: { count: 0, region: 'Other', selections: [] } },
+        LKG: { ...initialAnswers, classLevel: 'LKG', languages: { count: 0, selections: [] } },
+        UKG: { ...initialAnswers, classLevel: 'UKG', languages: { count: 0, selections: [] } },
     });
     
     const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -203,21 +197,6 @@ const QuestionnairePage: React.FC = () => {
     const setAnswers = (newAnswers: Partial<QuestionnaireAnswers>) => {
         updateClassAnswers(currentClass, prevAnswers => ({ ...prevAnswers, ...newAnswers }));
     };
-
-    // Effect to manage language presets
-    useEffect(() => {
-        if (currentClass === 'Nursery') return;
-        const preset = OPTIONS.languageOptions.presets[answers.languages.region] || [];
-        const newSelections: LanguageSelection[] = Array.from({ length: answers.languages.count }).map((_, i) => ({
-            language: preset[i] || answers.languages.selections[i]?.language || '',
-            variant: answers.languages.selections[i]?.variant || null,
-        }));
-
-        if (JSON.stringify(newSelections) !== JSON.stringify(answers.languages.selections)) {
-            setAnswers({ languages: { ...answers.languages, selections: newSelections }});
-        }
-    }, [answers.languages.count, answers.languages.region, currentClass]);
-
 
     // --- NAVIGATION ---
     const totalStepsPerClass = 6;
@@ -320,7 +299,11 @@ const QuestionnairePage: React.FC = () => {
         let base = 0;
         if (answers.englishSkill) base += 2; if (answers.mathSkill) base += 2; if (answers.assessment) base++;
         if (answers.includeEVS) base++; if (answers.includeRhymes) base++; if (answers.includeArt) base++;
-        return { base, languages: answers.languages.count };
+        return {
+            base,
+            languagesSelected: answers.languages.selections.length,
+            languagesDesired: answers.languages.count,
+        };
     }, [answers]);
 
     // --- BOOK ID GENERATION ---
@@ -446,11 +429,10 @@ const QuestionnairePage: React.FC = () => {
                     return { ...current, includeArt: false };
                 case 'language': {
                     const newSelections = current.languages.selections.filter((_, idx) => idx !== action.index);
-                    const newCount = Math.min(2, Math.max(0, newSelections.length)) as 0 | 1 | 2;
+                    const newCount = Math.min(current.languages.count, newSelections.length) as 0 | 1 | 2;
                     return {
                         ...current,
                         languages: {
-                            ...current.languages,
                             count: newCount,
                             selections: newSelections,
                         },
@@ -574,7 +556,12 @@ const QuestionnairePage: React.FC = () => {
         ];
 
         if (className !== 'Nursery') {
-            if (classAnswers.languages.selections.length === 0) {
+            const desiredLanguages = classAnswers.languages.count;
+            const selectedLanguages = classAnswers.languages.selections;
+            const classVariants = OPTIONS.languageOptions.variants[className] || [];
+            const variantRequired = classVariants.length > 0;
+
+            if (desiredLanguages === 0) {
                 summaryItems.push({
                     key: 'language-none',
                     label: 'Languages',
@@ -582,20 +569,34 @@ const QuestionnairePage: React.FC = () => {
                     step: 5,
                 });
             } else {
-                classAnswers.languages.selections.forEach((selection, langIndex) => {
+                summaryItems.push({
+                    key: 'language-overview',
+                    label: 'Languages',
+                    value: `${selectedLanguages.length} of ${desiredLanguages} selected`,
+                    step: 5,
+                });
+
+                selectedLanguages.forEach((selection, langIndex) => {
                     summaryItems.push({
-                        key: `language-${langIndex}`,
-                        label: `Language ${langIndex + 1}`,
-                        value: selection.language
-                            ? selection.variant
-                                ? `${selection.language} (${selection.variant})`
-                                : selection.language
-                            : 'Not selected',
+                        key: `language-${selection.language}-${langIndex}`,
+                        label: selection.language,
+                        value: variantRequired
+                            ? (selection.variant || 'Variant not selected')
+                            : 'Selected',
                         step: 5,
                         canRemove: true,
                         onRemove: () => handleRemoveSelection(className, { type: 'language', index: langIndex }),
                     });
                 });
+
+                if (selectedLanguages.length < desiredLanguages) {
+                    summaryItems.push({
+                        key: 'language-pending',
+                        label: 'Pending languages',
+                        value: `${desiredLanguages - selectedLanguages.length} selection(s) remaining`,
+                        step: 5,
+                    });
+                }
             }
         }
 
@@ -701,55 +702,158 @@ const QuestionnairePage: React.FC = () => {
                         {answers.includeArt && <BookPreviewLink bookId={bookIds.art} label="View Art Book" />}
                     </div>
                 </div>);
-            case 5: // Languages
-                const handleLanguageChange = (index: number, language: string) => {
-                    const newSelections = [...answers.languages.selections];
-                    newSelections[index] = { language, variant: null }; // Reset variant
-                    setAnswers({ languages: { ...answers.languages, selections: newSelections }});
+            case 5: { // Languages
+                const classVariants = OPTIONS.languageOptions.variants[currentClass] || [];
+                const selectedLanguages = answers.languages.selections;
+                const selectionLimitReached = answers.languages.count > 0 && selectedLanguages.length >= answers.languages.count;
+
+                const handleCountSelection = (newCount: 0 | 1 | 2) => {
+                    updateClassAnswers(currentClass, current => {
+                        if (current.languages.count === newCount) {
+                            return current;
+                        }
+
+                        const trimmedSelections = current.languages.selections.slice(0, newCount);
+                        return {
+                            ...current,
+                            languages: {
+                                count: newCount,
+                                selections: trimmedSelections,
+                            },
+                        };
+                    });
                 };
-                const handleVariantChange = (index: number, variant: string) => {
-                    const newSelections = [...answers.languages.selections];
-                    newSelections[index].variant = variant;
-                    setAnswers({ languages: { ...answers.languages, selections: newSelections }});
+
+                const toggleLanguageSelection = (language: string) => {
+                    updateClassAnswers(currentClass, current => {
+                        const { count, selections } = current.languages;
+                        const existingIndex = selections.findIndex(sel => sel.language === language);
+
+                        if (existingIndex !== -1) {
+                            const updatedSelections = [...selections];
+                            updatedSelections.splice(existingIndex, 1);
+                            return {
+                                ...current,
+                                languages: {
+                                    count,
+                                    selections: updatedSelections,
+                                },
+                            };
+                        }
+
+                        if (count === 0 || selections.length >= count) {
+                            return current;
+                        }
+
+                        return {
+                            ...current,
+                            languages: {
+                                count,
+                                selections: [...selections, { language, variant: null }],
+                            },
+                        };
+                    });
                 };
+
+                const handleVariantChange = (language: string, variant: string) => {
+                    updateClassAnswers(currentClass, current => ({
+                        ...current,
+                        languages: {
+                            count: current.languages.count,
+                            selections: current.languages.selections.map(selection =>
+                                selection.language === language
+                                    ? { ...selection, variant }
+                                    : selection
+                            ),
+                        },
+                    }));
+                };
+
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Add Extra Languages (Optional)</h2>
-                    <p className="text-gray-600 mb-4">Choose your region for presets, then select languages and variants.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Region</h3>
-                            <select value={answers.languages.region} onChange={e => setAnswers({ languages: { ...answers.languages, region: e.target.value as any, selections: [] }})} className="block w-full max-w-xs p-2 border border-gray-300 rounded-md">
-                                {OPTIONS.languageOptions.regions.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Number of Languages</h3>
-                            <div className="flex gap-4">
-                                {OPTIONS.languageOptions.count.map((c, i) => (<RadioCard key={c} id={`lang-count-${i}`} name="lang-count" value={String(i)} label={c} description="" checked={answers.languages.count === i} onChange={e => setAnswers({ languages: { ...answers.languages, count: Number(e.target.value) as any }})} />))}
-                            </div>
+                    <p className="text-gray-600 mb-4">Start by choosing how many languages you need, then pick them from the list below.</p>
+
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">Number of Languages</h3>
+                        <div className="flex flex-wrap gap-4">
+                            {OPTIONS.languageOptions.count.map((label, index) => (
+                                <RadioCard
+                                    key={label}
+                                    id={`lang-count-${index}`}
+                                    name="lang-count"
+                                    value={String(index)}
+                                    label={label}
+                                    description=""
+                                    checked={answers.languages.count === index}
+                                    onChange={event => handleCountSelection(Number(event.target.value) as 0 | 1 | 2)}
+                                />
+                            ))}
                         </div>
                     </div>
-                    {answers.languages.selections.map((selection, index) => (
-                        <div key={index} className="mt-6 border-t pt-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Language {index + 1} Selection</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                                    <select value={selection.language} onChange={e => handleLanguageChange(index, e.target.value)} className="block w-full p-2 border border-gray-300 rounded-md">
-                                        <option value="">-- Select --</option>
-                                        {OPTIONS.languageOptions.list.map(l => <option key={l} value={l}>{l}</option>)}
-                                    </select>
-                                </div>
-                                {selection.language && <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {OPTIONS.languageOptions.variants[currentClass].map(v => (<button key={v} onClick={() => handleVariantChange(index, v)} className={`px-3 py-1.5 text-sm rounded-md border ${selection.variant === v ? 'bg-primary-600 text-white border-primary-600' : 'bg-white hover:bg-gray-100'}`}>{v}</button>))}
-                                    </div>
-                                </div>}
+
+                    {answers.languages.count > 0 && (
+                        <>
+                            <div className="mt-6 text-sm text-gray-600">
+                                Selected {selectedLanguages.length} of {answers.languages.count} allowed.
+                                {selectionLimitReached && ' Deselect a language to choose another.'}
                             </div>
-                        </div>
-                    ))}
+
+                            <div className="mt-4 space-y-4">
+                                {OPTIONS.languageOptions.list.map(language => {
+                                    const selection = selectedLanguages.find(sel => sel.language === language);
+                                    const isSelected = !!selection;
+                                    const activeVariant = selection?.variant ?? null;
+                                    return (
+                                        <div key={language} className="border rounded-lg p-4">
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                                <div>
+                                                    <p className="text-base font-semibold text-gray-800">{language}</p>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <button
+                                                        onClick={() => toggleLanguageSelection(language)}
+                                                        disabled={!isSelected && selectionLimitReached}
+                                                        className={`px-3 py-1.5 text-sm font-semibold rounded-md border transition-colors ${isSelected
+                                                            ? 'bg-primary-600 text-white border-primary-600'
+                                                            : (!isSelected && selectionLimitReached)
+                                                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                                                : 'bg-white text-primary-600 border-primary-600 hover:bg-primary-50'}`}
+                                                    >
+                                                        {isSelected ? 'Selected' : 'Select'}
+                                                    </button>
+
+                                                    {isSelected && classVariants.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {classVariants.map(variant => (
+                                                                <button
+                                                                    key={variant}
+                                                                    onClick={() => handleVariantChange(language, variant)}
+                                                                    className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${activeVariant === variant
+                                                                        ? 'bg-primary-600 text-white border-primary-600'
+                                                                        : 'bg-white hover:bg-gray-100'}`}
+                                                                >
+                                                                    {variant}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {isSelected && classVariants.length === 0 && (
+                                                <p className="text-sm text-gray-500 mt-2">No variant selection required.</p>
+                                            )}
+                                            {isSelected && classVariants.length > 0 && !activeVariant && (
+                                                <p className="text-xs text-red-600 mt-2">Select a variant to finalise this language.</p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
+                    )}
                 </div>);
+            }
             case 6: // Class Summary
                 const summaryItems = buildSummaryItems(currentClass, answers, bookIds);
                 return (<div>
@@ -861,7 +965,10 @@ const QuestionnairePage: React.FC = () => {
                 <div className="mt-3 text-sm font-semibold text-primary-700">
                     <span>Base selected: {progress.base}/8</span>
                     <span className="mx-2">•</span>
-                    <span>Languages: {progress.languages}/2</span>
+                    <span>
+                        Languages: {progress.languagesSelected}
+                        {progress.languagesDesired > 0 ? `/${progress.languagesDesired}` : ''}
+                    </span>
                 </div>
             </>}
         </div>
