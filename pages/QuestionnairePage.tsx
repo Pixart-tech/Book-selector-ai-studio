@@ -240,11 +240,6 @@ const QuestionnairePage: React.FC = () => {
             return;
         }
 
-        if (step < totalStepsPerClass) {
-            setStep(step + 1);
-            return;
-        }
-
         if (summaryReturnTarget === 'class') {
             setSummaryReturnTarget(null);
             setStep(totalStepsPerClass);
@@ -253,6 +248,11 @@ const QuestionnairePage: React.FC = () => {
 
         if (summaryReturnTarget === 'final') {
             returnToSummary();
+            return;
+        }
+
+        if (step < totalStepsPerClass) {
+            setStep(step + 1);
             return;
         }
 
