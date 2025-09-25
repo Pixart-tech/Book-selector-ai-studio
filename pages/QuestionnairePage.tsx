@@ -680,6 +680,11 @@ const QuestionnairePage: React.FC = () => {
                     <div className="space-y-4">
                         {OPTIONS.assessment.map(type => (<RadioCard key={type.value} id={`assess-${type.value}`} name="assessment" value={type.value} label={type.value} description={type.description} checked={answers.assessment === type.value} onChange={e => setAnswers({ assessment: e.target.value as any })} />))}
                     </div>
+                    {answers.assessment && (
+                        <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
+                            <BookPreviewLink bookId={bookIds.assessment} label="View Assessment Book" />
+                        </div>
+                    )}
                 </div>);
             case 4: // Core Subjects
                  return (<div>
