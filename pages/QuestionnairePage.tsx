@@ -434,8 +434,18 @@ const QuestionnairePage: React.FC = () => {
 
     const progress = useMemo(() => {
         let coreBooksSelected = 0;
-        if (isEnglishSelectionComplete(answers)) coreBooksSelected += 2;
-        if (isMathSelectionComplete(answers)) coreBooksSelected += 2;
+        if (isEnglishSelectionComplete(answers)) {
+            coreBooksSelected += 1;
+            if (answers.includeEnglishWorkbook) {
+                coreBooksSelected += 1;
+            }
+        }
+        if (isMathSelectionComplete(answers)) {
+            coreBooksSelected += 1;
+            if (answers.includeMathWorkbook) {
+                coreBooksSelected += 1;
+            }
+        }
         if (answers.assessment) coreBooksSelected++;
         if (answers.includeEVS) coreBooksSelected++;
         if (answers.includeRhymes) coreBooksSelected++;
