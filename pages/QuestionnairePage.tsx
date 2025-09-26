@@ -137,7 +137,7 @@ const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id:
 );
 
 const BookPreviewLink: React.FC<{ bookId: string | null; label: string }> = ({ bookId, label }) => {
-    if (!bookId) return <span className="text-sm text-gray-500">{label} (selection incomplete)</span>;
+    if (!bookId) return null;
     return (
         <Link to={`/pdf/${bookId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary-600 hover:underline hover:text-primary-800 transition-colors">
             {label} ↗
@@ -448,112 +448,117 @@ const QuestionnairePage: React.FC = () => {
 
 
     const buildSummaryItems = (className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
-        const englishSkillValue = classAnswers.englishSkill
-            ? classAnswers.englishSkillWritingFocus
-                ? `${classAnswers.englishSkill} (${classAnswers.englishSkillWritingFocus})`
-                : classAnswers.englishSkill
-            : 'Not selected';
+        const requiresEnglishWritingFocus = classAnswers.classLevel === 'Nursery' && (classAnswers.englishSkill === 'ABCD' || classAnswers.englishSkill === 'SATPIN');
+        const requiresEnglishAssist = (classAnswers.classLevel === 'Nursery' || classAnswers.classLevel === 'LKG') && !!classAnswers.englishSkill && classAnswers.englishSkill !== 'Jolly Phonics';
+        const englishSelectionComplete = !!classAnswers.englishSkill
+            && (!requiresEnglishWritingFocus || !!classAnswers.englishSkillWritingFocus)
+            && (!requiresEnglishAssist || classAnswers.englishWorkbookAssist !== null);
 
-        const englishWorkbookValue = (() => {
-            if (!classAnswers.englishSkill) return 'Requires English skill selection';
-            if (classAnswers.classLevel === 'UKG' || classAnswers.englishSkill === 'Jolly Phonics') {
-                return 'Matches English skill selection';
-            }
-            if (classAnswers.englishWorkbookAssist === null) return 'Assist not selected';
-            return classAnswers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
-        })();
+        const requiresMathAssist = classAnswers.classLevel === 'Nursery' || classAnswers.classLevel === 'LKG';
+        const mathSelectionComplete = !!classAnswers.mathSkill
+            && (!requiresMathAssist || classAnswers.mathWorkbookAssist !== null);
 
-        const mathWorkbookValue = (() => {
-            if (!classAnswers.mathSkill) return 'Requires Math skill selection';
-            if (classAnswers.classLevel !== 'Nursery' && classAnswers.classLevel !== 'LKG') {
-                return 'Matches Math skill selection';
-            }
-            if (classAnswers.mathWorkbookAssist === null) return 'Assist not selected';
-            return classAnswers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
-        })();
+        const summaryItems: SummaryItem[] = [];
 
-        const summaryItems: SummaryItem[] = [
-            {
+        if (englishSelectionComplete) {
+            summaryItems.push({
                 key: 'english-skill',
                 label: 'English Skill Book',
-                value: englishSkillValue,
+                value: formatEnglishSkillSummary(classAnswers),
                 step: 1,
-                canRemove: !!classAnswers.englishSkill,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'english' }),
                 bookId: classBookIds.englishSkill,
                 bookLabel: 'View English Skill Book',
-            },
-            {
+            });
+
+            summaryItems.push({
                 key: 'english-workbook',
                 label: 'English Workbook',
-                value: englishWorkbookValue,
+                value: getEnglishWorkbookSummary(classAnswers),
                 step: 1,
-                canRemove: !!classAnswers.englishSkill,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'english' }),
                 bookId: classBookIds.englishWorkbook,
                 bookLabel: 'View English Workbook',
-            },
-            {
+            });
+        }
+
+        if (mathSelectionComplete) {
+            summaryItems.push({
                 key: 'math-skill',
                 label: 'Math Skill Book',
-                value: classAnswers.mathSkill || 'Not selected',
+                value: classAnswers.mathSkill as string,
                 step: 2,
-                canRemove: !!classAnswers.mathSkill,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'math' }),
                 bookId: classBookIds.mathSkill,
                 bookLabel: 'View Math Skill Book',
-            },
-            {
+            });
+
+            summaryItems.push({
                 key: 'math-workbook',
                 label: 'Math Workbook',
-                value: mathWorkbookValue,
+                value: getMathWorkbookSummary(classAnswers),
                 step: 2,
-                canRemove: !!classAnswers.mathSkill,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'math' }),
                 bookId: classBookIds.mathWorkbook,
                 bookLabel: 'View Math Workbook',
-            },
-            {
+            });
+        }
+
+        if (classAnswers.assessment) {
+            summaryItems.push({
                 key: 'assessment',
                 label: 'Assessment',
-                value: classAnswers.assessment || 'Not selected',
+                value: classAnswers.assessment,
                 step: 3,
-                canRemove: !!classAnswers.assessment,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'assessment' }),
                 bookId: classBookIds.assessment,
                 bookLabel: 'View Assessment Book',
-            },
-            {
+            });
+        }
+
+        if (classAnswers.includeEVS) {
+            summaryItems.push({
                 key: 'core-evs',
                 label: 'EVS',
-                value: classAnswers.includeEVS ? 'Included' : 'Not included',
+                value: 'Included',
                 step: 4,
-                canRemove: classAnswers.includeEVS,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'EVS' }),
-                bookId: classAnswers.includeEVS ? classBookIds.evs : null,
+                bookId: classBookIds.evs,
                 bookLabel: 'View EVS Book',
-            },
-            {
+            });
+        }
+
+        if (classAnswers.includeRhymes) {
+            summaryItems.push({
                 key: 'core-rhymes',
                 label: 'Rhymes & Stories',
-                value: classAnswers.includeRhymes ? 'Included' : 'Not included',
+                value: 'Included',
                 step: 4,
-                canRemove: classAnswers.includeRhymes,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'Rhymes & Stories' }),
-                bookId: classAnswers.includeRhymes ? classBookIds.rhymes : null,
+                bookId: classBookIds.rhymes,
                 bookLabel: 'View Rhymes Book',
-            },
-            {
+            });
+        }
+
+        if (classAnswers.includeArt) {
+            summaryItems.push({
                 key: 'core-art',
                 label: 'Art & Craft',
-                value: classAnswers.includeArt ? 'Included' : 'Not included',
+                value: 'Included',
                 step: 4,
-                canRemove: classAnswers.includeArt,
+                canRemove: true,
                 onRemove: () => handleRemoveSelection(className, { type: 'core', subject: 'Art & Craft' }),
-                bookId: classAnswers.includeArt ? classBookIds.art : null,
+                bookId: classBookIds.art,
                 bookLabel: 'View Art Book',
-            },
-        ];
+            });
+        }
 
         if (className !== 'Nursery') {
             const desiredLanguages = classAnswers.languages.count;
@@ -561,40 +566,21 @@ const QuestionnairePage: React.FC = () => {
             const classVariants = OPTIONS.languageOptions.variants[className] || [];
             const variantRequired = classVariants.length > 0;
 
-            if (desiredLanguages === 0) {
-                summaryItems.push({
-                    key: 'language-none',
-                    label: 'Languages',
-                    value: 'No additional languages selected',
-                    step: 5,
-                });
-            } else {
-                summaryItems.push({
-                    key: 'language-overview',
-                    label: 'Languages',
-                    value: `${selectedLanguages.length} of ${desiredLanguages} selected`,
-                    step: 5,
-                });
+            if (desiredLanguages > 0) {
+                const selectionEntries = selectedLanguages.map((selection, index) => ({ selection, index }));
+                const allSelectionsComplete = selectionEntries.length === desiredLanguages
+                    && selectionEntries.every(({ selection }) => selection.language && (!variantRequired || !!selection.variant));
 
-                selectedLanguages.forEach((selection, langIndex) => {
-                    summaryItems.push({
-                        key: `language-${selection.language}-${langIndex}`,
-                        label: selection.language,
-                        value: variantRequired
-                            ? (selection.variant || 'Variant not selected')
-                            : 'Selected',
-                        step: 5,
-                        canRemove: true,
-                        onRemove: () => handleRemoveSelection(className, { type: 'language', index: langIndex }),
-                    });
-                });
-
-                if (selectedLanguages.length < desiredLanguages) {
-                    summaryItems.push({
-                        key: 'language-pending',
-                        label: 'Pending languages',
-                        value: `${desiredLanguages - selectedLanguages.length} selection(s) remaining`,
-                        step: 5,
+                if (allSelectionsComplete) {
+                    selectionEntries.forEach(({ selection, index }) => {
+                        summaryItems.push({
+                            key: `language-${selection.language}-${index}`,
+                            label: selection.language,
+                            value: variantRequired ? (selection.variant as string) : 'Selected',
+                            step: 5,
+                            canRemove: true,
+                            onRemove: () => handleRemoveSelection(className, { type: 'language', index }),
+                        });
                     });
                 }
             }
