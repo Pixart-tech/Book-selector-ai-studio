@@ -152,7 +152,8 @@ const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
 const isEnglishSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
     const requiresWritingFocus = answers.classLevel === 'Nursery'
         && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
-    const requiresAssist = (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
+    const requiresAssist = answers.includeEnglishWorkbook
+        && (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
         && !!answers.englishSkill
         && answers.englishSkill !== 'Jolly Phonics';
 
@@ -162,7 +163,8 @@ const isEnglishSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
 };
 
 const isMathSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
-    const requiresAssist = answers.classLevel === 'Nursery' || answers.classLevel === 'LKG';
+    const requiresAssist = answers.includeMathWorkbook
+        && (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG');
 
     return !!answers.mathSkill
         && (!requiresAssist || answers.mathWorkbookAssist !== null);
@@ -295,8 +297,10 @@ const QuestionnairePage: React.FC = () => {
         englishSkill: null,
         englishSkillWritingFocus: null,
         englishWorkbookAssist: null,
+        includeEnglishWorkbook: true,
         mathWorkbookAssist: null,
         mathSkill: null,
+        includeMathWorkbook: true,
         assessment: null,
         includeEVS: true,
         includeRhymes: true,
@@ -517,9 +521,9 @@ const QuestionnairePage: React.FC = () => {
 
     const bookIds = useMemo<SummaryBookIds>(() => ({
         englishSkill: answers.englishSkill ? getBookId('English Skill') : null,
-        englishWorkbook: answers.englishSkill ? getBookId('English Workbook') : null,
+        englishWorkbook: answers.includeEnglishWorkbook && answers.englishSkill ? getBookId('English Workbook') : null,
         mathSkill: answers.mathSkill ? getBookId('Math Skill') : null,
-        mathWorkbook: answers.mathSkill ? getBookId('Math Workbook') : null,
+        mathWorkbook: answers.includeMathWorkbook && answers.mathSkill ? getBookId('Math Workbook') : null,
         assessment: answers.assessment ? getBookId('Assessment') : null,
         evs: getBookId('EVS'),
         rhymes: getBookId('Rhymes & Stories'),
@@ -527,8 +531,10 @@ const QuestionnairePage: React.FC = () => {
     }), [answers, getBookId]);
 
     type SummaryAction =
-        | { type: 'english' }
-        | { type: 'math' }
+        | { type: 'englishSkill' }
+        | { type: 'englishWorkbook' }
+        | { type: 'mathSkill' }
+        | { type: 'mathWorkbook' }
         | { type: 'assessment' }
         | { type: 'core'; subject: 'EVS' | 'Rhymes & Stories' | 'Art & Craft' }
         | { type: 'language'; index: number };
@@ -536,17 +542,31 @@ const QuestionnairePage: React.FC = () => {
     const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => {
         updateClassAnswers(className, current => {
             switch (action.type) {
-                case 'english':
+                case 'englishSkill':
                     return {
                         ...current,
                         englishSkill: null,
                         englishSkillWritingFocus: null,
                         englishWorkbookAssist: null,
+                        includeEnglishWorkbook: true,
                     };
-                case 'math':
+                case 'englishWorkbook':
+                    return {
+                        ...current,
+                        includeEnglishWorkbook: false,
+                        englishWorkbookAssist: null,
+                    };
+                case 'mathSkill':
                     return {
                         ...current,
                         mathSkill: null,
+                        mathWorkbookAssist: null,
+                        includeMathWorkbook: true,
+                    };
+                case 'mathWorkbook':
+                    return {
+                        ...current,
+                        includeMathWorkbook: false,
                         mathWorkbookAssist: null,
                     };
                 case 'assessment':
@@ -595,21 +615,23 @@ const QuestionnairePage: React.FC = () => {
                 value: formatEnglishSkillSummary(classAnswers),
                 step: 1,
                 canRemove: true,
-                onRemove: () => handleRemoveSelection(className, { type: 'english' }),
+                onRemove: () => handleRemoveSelection(className, { type: 'englishSkill' }),
                 bookId: classBookIds.englishSkill,
                 bookLabel: 'View English Skill Book',
             });
 
-            summaryItems.push({
-                key: 'english-workbook',
-                label: 'English Workbook',
-                value: getEnglishWorkbookSummary(classAnswers),
-                step: 1,
-                canRemove: true,
-                onRemove: () => handleRemoveSelection(className, { type: 'english' }),
-                bookId: classBookIds.englishWorkbook,
-                bookLabel: 'View English Workbook',
-            });
+            if (classAnswers.includeEnglishWorkbook) {
+                summaryItems.push({
+                    key: 'english-workbook',
+                    label: 'English Workbook',
+                    value: getEnglishWorkbookSummary(classAnswers),
+                    step: 1,
+                    canRemove: true,
+                    onRemove: () => handleRemoveSelection(className, { type: 'englishWorkbook' }),
+                    bookId: classBookIds.englishWorkbook,
+                    bookLabel: 'View English Workbook',
+                });
+            }
         }
 
         if (mathSelectionComplete) {
@@ -619,21 +641,23 @@ const QuestionnairePage: React.FC = () => {
                 value: classAnswers.mathSkill as string,
                 step: 2,
                 canRemove: true,
-                onRemove: () => handleRemoveSelection(className, { type: 'math' }),
+                onRemove: () => handleRemoveSelection(className, { type: 'mathSkill' }),
                 bookId: classBookIds.mathSkill,
                 bookLabel: 'View Math Skill Book',
             });
 
-            summaryItems.push({
-                key: 'math-workbook',
-                label: 'Math Workbook',
-                value: getMathWorkbookSummary(classAnswers),
-                step: 2,
-                canRemove: true,
-                onRemove: () => handleRemoveSelection(className, { type: 'math' }),
-                bookId: classBookIds.mathWorkbook,
-                bookLabel: 'View Math Workbook',
-            });
+            if (classAnswers.includeMathWorkbook) {
+                summaryItems.push({
+                    key: 'math-workbook',
+                    label: 'Math Workbook',
+                    value: getMathWorkbookSummary(classAnswers),
+                    step: 2,
+                    canRemove: true,
+                    onRemove: () => handleRemoveSelection(className, { type: 'mathWorkbook' }),
+                    bookId: classBookIds.mathWorkbook,
+                    bookLabel: 'View Math Workbook',
+                });
+            }
         }
 
         if (classAnswers.assessment) {
@@ -726,19 +750,15 @@ const QuestionnairePage: React.FC = () => {
         switch (step) {
             case 1: // English
                 const showWritingFocus = currentClass === 'Nursery' && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
-                const shouldAskForAssist = (currentClass === 'Nursery' || currentClass === 'LKG') && !!answers.englishSkill && answers.englishSkill !== 'Jolly Phonics';
+                const shouldAskForAssist = (currentClass === 'Nursery' || currentClass === 'LKG')
+                    && !!answers.englishSkill
+                    && answers.englishSkill !== 'Jolly Phonics'
+                    && answers.includeEnglishWorkbook;
 
-                const isSkillSelectionComplete = (() => {
-                    if (!answers.englishSkill) return false;
-                    if (showWritingFocus && !answers.englishSkillWritingFocus) {
-                        return false;
-                    }
-                    if (shouldAskForAssist) {
-                        return answers.englishWorkbookAssist !== null;
-                    }
-                    // For UKG and Jolly Phonics, assist is not asked
-                    return true;
-                })();
+                const isSkillSelectionComplete = isEnglishSelectionComplete(answers);
+                const showWorkbookPreview = answers.includeEnglishWorkbook
+                    && !!answers.englishSkill
+                    && (!shouldAskForAssist || answers.englishWorkbookAssist !== null);
 
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose English Skill Variant</h2>
@@ -753,7 +773,12 @@ const QuestionnairePage: React.FC = () => {
                                 label={skill}
                                 description={skill === 'LTI' ? 'Caps only writing' : 'Select one option'}
                                 checked={answers.englishSkill === skill}
-                                onChange={e => setAnswers({ englishSkill: e.target.value, englishWorkbookAssist: null, englishSkillWritingFocus: null })}
+                                onChange={e => setAnswers({
+                                    englishSkill: e.target.value,
+                                    englishWorkbookAssist: null,
+                                    englishSkillWritingFocus: null,
+                                    includeEnglishWorkbook: true,
+                                })}
                                 theme={theme}
                             />
                         ))}
@@ -775,10 +800,17 @@ const QuestionnairePage: React.FC = () => {
                     </div>)}
                     {isSkillSelectionComplete && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
                         <BookPreviewLink bookId={bookIds.englishSkill} label="View Skill Book" theme={theme} />
-                        <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" theme={theme} />
+                        {showWorkbookPreview && <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
                 </div>);
             case 2: // Math
+                const isMathSelectionCompleteForPreview = isMathSelectionComplete(answers);
+                const showMathWorkbookPreview = answers.includeMathWorkbook
+                    && !!answers.mathSkill
+                    && ((currentClass === 'Nursery' || currentClass === 'LKG')
+                        ? answers.mathWorkbookAssist !== null
+                        : true);
+
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose Math Skill Variant</h2>
                     <p className="text-gray-600 mb-2">The Math Workbook will automatically match this selection.</p>
@@ -793,12 +825,16 @@ const QuestionnairePage: React.FC = () => {
                                 label={skill}
                                 description=""
                                 checked={answers.mathSkill === skill}
-                                onChange={e => setAnswers({ mathSkill: e.target.value, mathWorkbookAssist: null })}
+                                onChange={e => setAnswers({
+                                    mathSkill: e.target.value,
+                                    mathWorkbookAssist: null,
+                                    includeMathWorkbook: true,
+                                })}
                                 theme={theme}
                             />
                         ))}
                     </div>
-                    {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill && (
+                    {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill && answers.includeMathWorkbook && (
                         <div className="mt-6 border-t pt-6">
                             <h3 className="text-lg font-semibold mb-2">Math Workbook Writing Assist</h3>
                             <div className="flex gap-4">
@@ -807,9 +843,9 @@ const QuestionnairePage: React.FC = () => {
                             </div>
                         </div>
                     )}
-                    {answers.mathSkill && ((currentClass !== 'Nursery' && currentClass !== 'LKG') || answers.mathWorkbookAssist !== null) && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                    {isMathSelectionCompleteForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
                         <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" theme={theme} />
-                        <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" theme={theme} />
+                        {showMathWorkbookPreview && <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
                 </div>);
             case 3: // Assessment
