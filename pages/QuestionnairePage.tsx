@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QuestionnaireAnswers } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -291,6 +291,11 @@ const QuestionnairePage: React.FC = () => {
     const [step, setStep] = useState(1);
     const [showFinalSummary, setShowFinalSummary] = useState(false);
     const [summaryReturnTarget, setSummaryReturnTarget] = useState<null | 'class' | 'final'>(null);
+    const [coreSubjectsReached, setCoreSubjectsReached] = useState<Record<ClassLevel, boolean>>({
+        Nursery: false,
+        LKG: false,
+        UKG: false,
+    });
     
     const initialAnswers: QuestionnaireAnswers = {
         classLevel: null,
@@ -432,6 +437,14 @@ const QuestionnairePage: React.FC = () => {
         } catch(e) { setStatus('error'); }
     }
 
+    useEffect(() => {
+        if (step === 4) {
+            setCoreSubjectsReached(prev => (prev[currentClass]
+                ? prev
+                : { ...prev, [currentClass]: true }));
+        }
+    }, [step, currentClass]);
+
     const progress = useMemo(() => {
         let coreBooksSelected = 0;
         if (isEnglishSelectionComplete(answers)) {
@@ -447,15 +460,18 @@ const QuestionnairePage: React.FC = () => {
             }
         }
         if (answers.assessment) coreBooksSelected++;
-        if (answers.includeEVS) coreBooksSelected++;
-        if (answers.includeRhymes) coreBooksSelected++;
-        if (answers.includeArt) coreBooksSelected++;
+
+        const includeCoreSubjects = showFinalSummary || coreSubjectsReached[currentClass];
+
+        if (includeCoreSubjects && answers.includeEVS) coreBooksSelected++;
+        if (includeCoreSubjects && answers.includeRhymes) coreBooksSelected++;
+        if (includeCoreSubjects && answers.includeArt) coreBooksSelected++;
         return {
             coreBooksSelected,
             languagesSelected: answers.languages.selections.length,
             languagesDesired: answers.languages.count,
         };
-    }, [answers]);
+    }, [answers, coreSubjectsReached, currentClass, showFinalSummary]);
 
     const booksSelected = progress.coreBooksSelected + progress.languagesSelected;
 
