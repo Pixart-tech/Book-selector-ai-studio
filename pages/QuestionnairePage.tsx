@@ -862,111 +862,135 @@ const QuestionnairePage: React.FC = () => {
                     });
                 };
 
-                return (<div>
-                    <h2 className="text-xl font-semibold mb-1">Choose English Skill Variant</h2>
-                    <p className="text-gray-600 mb-4">The English Workbook will automatically match your selection.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {OPTIONS.englishSkill[currentClass].map(skill => (
-                            <RadioCard
-                                key={skill}
-                                id={`eng-${skill}`}
-                                name="englishSkill"
-                                value={skill}
-                                label={skill}
-                                description={skill === 'LTI' ? 'Caps only writing' : 'Select one option'}
-                                checked={answers.englishSkill === skill}
-                                onChange={() => handleEnglishSkillSelection(skill)}
-                                onSelect={(_, wasChecked) => handleEnglishSkillClick(skill, wasChecked)}
-                                theme={theme}
-                            />
-                        ))}
-                    </div>
-                    {showWritingFocus && (<div className="mt-6 border-t pt-6">
-                        <h3 className="text-lg font-semibold mb-2">What do you focus on writing?</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <RadioCard
-                                id="focus-caps"
-                                name="writingFocus"
-                                value="Caps"
-                                label="Caps"
-                                description=""
-                                checked={answers.englishSkillWritingFocus === 'Caps'}
-                                onChange={() => handleWritingFocusChange('Caps')}
-                                onSelect={(_, wasChecked) => {
-                                    if (wasChecked) {
-                                        handleWritingFocusChange('Caps');
-                                    }
-                                }}
-                                theme={theme}
-                            />
-                            <RadioCard
-                                id="focus-small"
-                                name="writingFocus"
-                                value="Small"
-                                label="Small"
-                                description=""
-                                checked={answers.englishSkillWritingFocus === 'Small'}
-                                onChange={() => handleWritingFocusChange('Small')}
-                                onSelect={(_, wasChecked) => {
-                                    if (wasChecked) {
-                                        handleWritingFocusChange('Small');
-                                    }
-                                }}
-                                theme={theme}
-                            />
-                            <RadioCard
-                                id="focus-caps-small"
-                                name="writingFocus"
-                                value="Caps & Small"
-                                label="Caps & Small"
-                                description=""
-                                checked={answers.englishSkillWritingFocus === 'Caps & Small'}
-                                onChange={() => handleWritingFocusChange('Caps & Small')}
-                                onSelect={(_, wasChecked) => {
-                                    if (wasChecked) {
-                                        handleWritingFocusChange('Caps & Small');
-                                    }
-                                }}
-                                theme={theme}
-                            />
+                return (<div className="space-y-6">
+                    <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="flex flex-col gap-2">
+                            <h2 className="text-xl font-semibold text-gray-800">What pattern do you choose?</h2>
+                            <p className="text-gray-600">Select the English skill book that fits your class routine.</p>
                         </div>
-                    </div>)}
-                    {shouldAskForAssist && (<div className="mt-6 border-t pt-6">
-                        <h3 className="text-lg font-semibold mb-2">English Workbook Writing Assist</h3>
-                        <div className="flex gap-4">
-                            <RadioCard
-                                id="assist-yes"
-                                name="englishWorkbookAssist"
-                                value="yes"
-                                label="Yes"
-                                description="All rows dotted."
-                                checked={answers.englishWorkbookAssist === true}
-                                onChange={() => handleEnglishWorkbookAssistChange(true)}
-                                onSelect={(_, wasChecked) => {
-                                    if (wasChecked) {
-                                        handleEnglishWorkbookAssistChange(true);
-                                    }
-                                }}
-                                theme={theme}
-                            />
-                            <RadioCard
-                                id="assist-no"
-                                name="englishWorkbookAssist"
-                                value="no"
-                                label="No"
-                                description="Only first 2 rows dotted."
-                                checked={answers.englishWorkbookAssist === false}
-                                onChange={() => handleEnglishWorkbookAssistChange(false)}
-                                onSelect={(_, wasChecked) => {
-                                    if (wasChecked) {
-                                        handleEnglishWorkbookAssistChange(false);
-                                    }
-                                }}
-                                theme={theme}
-                            />
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {OPTIONS.englishSkill[currentClass].map(skill => (
+                                <RadioCard
+                                    key={skill}
+                                    id={`eng-${skill}`}
+                                    name="englishSkill"
+                                    value={skill}
+                                    label={skill}
+                                    description={skill === 'LTI' ? 'Caps only writing' : 'Select one option'}
+                                    checked={answers.englishSkill === skill}
+                                    onChange={() => handleEnglishSkillSelection(skill)}
+                                    onSelect={(_, wasChecked) => handleEnglishSkillClick(skill, wasChecked)}
+                                    theme={theme}
+                                />
+                            ))}
                         </div>
-                    </div>)}
-                    {isEnglishSkillReadyForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                        {showWritingFocus && (<div className="mt-6 border-t pt-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2">Which letter case do you emphasise?</h3>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <RadioCard
+                                    id="focus-caps"
+                                    name="writingFocus"
+                                    value="Caps"
+                                    label="Caps"
+                                    description=""
+                                    checked={answers.englishSkillWritingFocus === 'Caps'}
+                                    onChange={() => handleWritingFocusChange('Caps')}
+                                    onSelect={(_, wasChecked) => {
+                                        if (wasChecked) {
+                                            handleWritingFocusChange('Caps');
+                                        }
+                                    }}
+                                    theme={theme}
+                                />
+                                <RadioCard
+                                    id="focus-small"
+                                    name="writingFocus"
+                                    value="Small"
+                                    label="Small"
+                                    description=""
+                                    checked={answers.englishSkillWritingFocus === 'Small'}
+                                    onChange={() => handleWritingFocusChange('Small')}
+                                    onSelect={(_, wasChecked) => {
+                                        if (wasChecked) {
+                                            handleWritingFocusChange('Small');
+                                        }
+                                    }}
+                                    theme={theme}
+                                />
+                                <RadioCard
+                                    id="focus-caps-small"
+                                    name="writingFocus"
+                                    value="Caps & Small"
+                                    label="Caps & Small"
+                                    description=""
+                                    checked={answers.englishSkillWritingFocus === 'Caps & Small'}
+                                    onChange={() => handleWritingFocusChange('Caps & Small')}
+                                    onSelect={(_, wasChecked) => {
+                                        if (wasChecked) {
+                                            handleWritingFocusChange('Caps & Small');
+                                        }
+                                    }}
+                                    theme={theme}
+                                />
+                            </div>
+                        </div>)}
+                    </section>
+                    <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="flex flex-col gap-2">
+                            <h2 className="text-xl font-semibold text-gray-800">Writing Assist?</h2>
+                            <p className="text-gray-600">Choose the handwriting support level for the matching workbook.</p>
+                        </div>
+                        {answers.includeEnglishWorkbook ? (
+                            shouldAskForAssist ? (
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <RadioCard
+                                        id="assist-yes"
+                                        name="englishWorkbookAssist"
+                                        value="yes"
+                                        label="Yes"
+                                        description="All rows dotted."
+                                        checked={answers.englishWorkbookAssist === true}
+                                        onChange={() => handleEnglishWorkbookAssistChange(true)}
+                                        onSelect={(_, wasChecked) => {
+                                            if (wasChecked) {
+                                                handleEnglishWorkbookAssistChange(true);
+                                            }
+                                        }}
+                                        theme={theme}
+                                    />
+                                    <RadioCard
+                                        id="assist-no"
+                                        name="englishWorkbookAssist"
+                                        value="no"
+                                        label="No"
+                                        description="Only first 2 rows dotted."
+                                        checked={answers.englishWorkbookAssist === false}
+                                        onChange={() => handleEnglishWorkbookAssistChange(false)}
+                                        onSelect={(_, wasChecked) => {
+                                            if (wasChecked) {
+                                                handleEnglishWorkbookAssistChange(false);
+                                            }
+                                        }}
+                                        theme={theme}
+                                    />
+                                </div>
+                            ) : (
+                                <p className="mt-4 text-sm text-gray-500">This workbook automatically aligns with your chosen pattern.</p>
+                            )
+                        ) : (
+                            <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-gray-600">The English workbook is currently excluded for this class.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setAnswers({ includeEnglishWorkbook: true, englishWorkbookAssist: null })}
+                                    className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-md ${theme.bgColor600} text-white ${theme.hoverBg700}`}
+                                >
+                                    Add Workbook Back
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                    {isEnglishSkillReadyForPreview && <div className={`mt-2 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-around`}>
                         <BookPreviewLink bookId={bookIds.englishSkill} label="View Skill Book" theme={theme} />
                         {showWorkbookPreview && <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
@@ -1003,68 +1027,93 @@ const QuestionnairePage: React.FC = () => {
                     });
                 };
 
-                return (<div>
-                    <h2 className="text-xl font-semibold mb-1">Choose Math Skill Variant</h2>
-                    <p className="text-gray-600 mb-2">The Math Workbook will automatically match this selection.</p>
-                    <p className="text-sm text-gray-500 mb-4">All variants include pre-math concepts, basic shapes and colours.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {OPTIONS.mathSkill[currentClass].map(skill => (
-                            <RadioCard
-                                key={skill}
-                                id={`math-${skill}`}
-                                name="mathSkill"
-                                value={skill}
-                                label={skill}
-                                description=""
-                                checked={answers.mathSkill === skill}
-                                onChange={() => handleMathSkillSelection(skill)}
-                                onSelect={(_, wasChecked) => handleMathSkillClick(skill, wasChecked)}
-                                theme={theme}
-                            />
-                        ))}
-                    </div>
-                    {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill && answers.includeMathWorkbook && (
-                        <div className="mt-6 border-t pt-6">
-                            <h3 className="text-lg font-semibold mb-2">Math Workbook Writing Assist</h3>
-                            <div className="flex gap-4">
-                                <RadioCard
-                                    id="math-assist-yes"
-                                    name="mathWorkbookAssist"
-                                    value="yes"
-                                    label="Yes"
-                                    description="All rows dotted."
-                                    checked={answers.mathWorkbookAssist === true}
-                                    onChange={() => handleMathWorkbookAssistChange(true)}
-                                    onSelect={(_, wasChecked) => {
-                                        if (wasChecked) {
-                                            handleMathWorkbookAssistChange(true);
-                                        }
-                                    }}
-                                    theme={theme}
-                                />
-                                <RadioCard
-                                    id="math-assist-no"
-                                    name="mathWorkbookAssist"
-                                    value="no"
-                                    label="No"
-                                    description="Only first 2 rows dotted."
-                                    checked={answers.mathWorkbookAssist === false}
-                                    onChange={() => handleMathWorkbookAssistChange(false)}
-                                    onSelect={(_, wasChecked) => {
-                                        if (wasChecked) {
-                                            handleMathWorkbookAssistChange(false);
-                                        }
-                                    }}
-                                    theme={theme}
-                                />
-                            </div>
+                return (<div className="space-y-6">
+                    <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="flex flex-col gap-2">
+                            <h2 className="text-xl font-semibold text-gray-800">How many numbers do you teach?</h2>
+                            <p className="text-gray-600">Pick the math skill book that reflects your counting targets.</p>
                         </div>
-                    )}
-                    {isMathSkillReadyForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {OPTIONS.mathSkill[currentClass].map(skill => (
+                                <RadioCard
+                                    key={skill}
+                                    id={`math-${skill}`}
+                                    name="mathSkill"
+                                    value={skill}
+                                    label={skill}
+                                    description=""
+                                    checked={answers.mathSkill === skill}
+                                    onChange={() => handleMathSkillSelection(skill)}
+                                    onSelect={(_, wasChecked) => handleMathSkillClick(skill, wasChecked)}
+                                    theme={theme}
+                                />
+                            ))}
+                        </div>
+                        <div className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold ${theme.bgColor50} ${theme.border500} ${theme.text600}`}>
+                            <span className="inline-block h-2 w-2 rounded-full bg-current"></span>
+                            <span>All variants include pre-math concepts, basic shapes and colours.</span>
+                        </div>
+                    </section>
+                    <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="flex flex-col gap-2">
+                            <h2 className="text-xl font-semibold text-gray-800">Writing Assist?</h2>
+                            <p className="text-gray-600">Choose the handwriting support level for the matching workbook.</p>
+                        </div>
+                        {answers.includeMathWorkbook ? (
+                            (currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill ? (
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <RadioCard
+                                        id="math-assist-yes"
+                                        name="mathWorkbookAssist"
+                                        value="yes"
+                                        label="Yes"
+                                        description="All rows dotted."
+                                        checked={answers.mathWorkbookAssist === true}
+                                        onChange={() => handleMathWorkbookAssistChange(true)}
+                                        onSelect={(_, wasChecked) => {
+                                            if (wasChecked) {
+                                                handleMathWorkbookAssistChange(true);
+                                            }
+                                        }}
+                                        theme={theme}
+                                    />
+                                    <RadioCard
+                                        id="math-assist-no"
+                                        name="mathWorkbookAssist"
+                                        value="no"
+                                        label="No"
+                                        description="Only first 2 rows dotted."
+                                        checked={answers.mathWorkbookAssist === false}
+                                        onChange={() => handleMathWorkbookAssistChange(false)}
+                                        onSelect={(_, wasChecked) => {
+                                            if (wasChecked) {
+                                                handleMathWorkbookAssistChange(false);
+                                            }
+                                        }}
+                                        theme={theme}
+                                    />
+                                </div>
+                            ) : (
+                                <p className="mt-4 text-sm text-gray-500">This workbook automatically aligns with your chosen number range.</p>
+                            )
+                        ) : (
+                            <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-gray-600">The Math workbook is currently excluded for this class.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setAnswers({ includeMathWorkbook: true, mathWorkbookAssist: null })}
+                                    className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-md ${theme.bgColor600} text-white ${theme.hoverBg700}`}
+                                >
+                                    Add Workbook Back
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                    {isMathSkillReadyForPreview && <div className={`mt-2 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-around`}>
                         <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" theme={theme} />
                         {showMathWorkbookPreview && <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
-                </div>);
+                </div>)
             case 3: // Assessment
                 const handleAssessmentChange = (value: QuestionnaireAnswers['assessment']) => {
                     setAnswers({
@@ -1368,14 +1417,17 @@ const QuestionnairePage: React.FC = () => {
         </div>
     );
     
+    const mainHeading = showFinalSummary
+        ? 'All Classes : Curriculum Customiser'
+        : `${currentClass} : Curriculum Customiser`;
+
     // --- MAIN RENDER ---
     return (<div className="container mx-auto max-w-4xl">
       <div className="bg-white p-8 rounded-lg shadow-md border">
         <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Book Package Questionnaire</h1>
-                    {!showFinalSummary && <p className={`text-md font-semibold ${theme.text700}`}>Configuring: {currentClass}</p>}
+                    <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
                 </div>
                 {!showFinalSummary && <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>}
             </div>
@@ -1419,7 +1471,7 @@ const QuestionnairePage: React.FC = () => {
                         ? 'Next'
                         : (currentClass === 'UKG'
                             ? 'Finish & View Summary'
-                            : `Next: Configure ${classOrder[currentClassIndex+1]}`))
+                            : `Next: Customise ${classOrder[currentClassIndex+1]}`))
                     : 'Next'}
               </button>
             )}
