@@ -445,6 +445,8 @@ const QuestionnairePage: React.FC = () => {
         };
     }, [answers]);
 
+    const totalBooksSelected = progress.base + progress.languagesSelected;
+
     // --- BOOK ID GENERATION ---
     const getBookId = useCallback((subject: string, sourceAnswers: QuestionnaireAnswers = answers): string | null => {
         const book = CATALOG.find(b => {
@@ -1156,14 +1158,13 @@ const QuestionnairePage: React.FC = () => {
                     <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
                 </div>
                 <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
-                    <span>Base selected: {progress.base}/8</span>
+                    <span>Base selected: {progress.base}</span>
+                    <span className="mx-2">•</span>
+                    <span>Books selected: {totalBooksSelected}</span>
                     {currentClass !== 'Nursery' && (
                         <>
                             <span className="mx-2">•</span>
-                            <span>
-                                Languages: {progress.languagesSelected}
-                                {progress.languagesDesired > 0 ? `/${progress.languagesDesired}` : ''}
-                            </span>
+                            <span>Languages selected: {progress.languagesSelected}</span>
                         </>
                     )}
                 </div>
