@@ -433,19 +433,21 @@ const QuestionnairePage: React.FC = () => {
     }
 
     const progress = useMemo(() => {
-        let base = 0;
-        if (isEnglishSelectionComplete(answers)) base += 2;
-        if (isMathSelectionComplete(answers)) base += 2;
-        if (answers.assessment) base++;
-        if (answers.includeEVS) base++; if (answers.includeRhymes) base++; if (answers.includeArt) base++;
+        let coreBooksSelected = 0;
+        if (isEnglishSelectionComplete(answers)) coreBooksSelected += 2;
+        if (isMathSelectionComplete(answers)) coreBooksSelected += 2;
+        if (answers.assessment) coreBooksSelected++;
+        if (answers.includeEVS) coreBooksSelected++;
+        if (answers.includeRhymes) coreBooksSelected++;
+        if (answers.includeArt) coreBooksSelected++;
         return {
-            base,
+            coreBooksSelected,
             languagesSelected: answers.languages.selections.length,
             languagesDesired: answers.languages.count,
         };
     }, [answers]);
 
-    const totalBooksSelected = progress.base + progress.languagesSelected;
+    const booksSelected = progress.coreBooksSelected + progress.languagesSelected;
 
     // --- BOOK ID GENERATION ---
     const getBookId = useCallback((subject: string, sourceAnswers: QuestionnaireAnswers = answers): string | null => {
@@ -1158,9 +1160,7 @@ const QuestionnairePage: React.FC = () => {
                     <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
                 </div>
                 <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
-                    <span>Base selected: {progress.base}</span>
-                    <span className="mx-2">•</span>
-                    <span>Books selected: {totalBooksSelected}</span>
+                    <span>Books selected: {booksSelected}</span>
                     {currentClass !== 'Nursery' && (
                         <>
                             <span className="mx-2">•</span>
