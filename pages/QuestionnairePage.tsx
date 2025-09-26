@@ -103,6 +103,25 @@ const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
     return answers.mathSkill;
 };
 
+const isEnglishSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
+    const requiresWritingFocus = answers.classLevel === 'Nursery'
+        && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
+    const requiresAssist = (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
+        && !!answers.englishSkill
+        && answers.englishSkill !== 'Jolly Phonics';
+
+    return !!answers.englishSkill
+        && (!requiresWritingFocus || !!answers.englishSkillWritingFocus)
+        && (!requiresAssist || answers.englishWorkbookAssist !== null);
+};
+
+const isMathSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
+    const requiresAssist = answers.classLevel === 'Nursery' || answers.classLevel === 'LKG';
+
+    return !!answers.mathSkill
+        && (!requiresAssist || answers.mathWorkbookAssist !== null);
+};
+
 // --- UI COMPONENTS ---
 const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
     <label
@@ -297,7 +316,9 @@ const QuestionnairePage: React.FC = () => {
 
     const progress = useMemo(() => {
         let base = 0;
-        if (answers.englishSkill) base += 2; if (answers.mathSkill) base += 2; if (answers.assessment) base++;
+        if (isEnglishSelectionComplete(answers)) base += 2;
+        if (isMathSelectionComplete(answers)) base += 2;
+        if (answers.assessment) base++;
         if (answers.includeEVS) base++; if (answers.includeRhymes) base++; if (answers.includeArt) base++;
         return {
             base,
@@ -448,15 +469,8 @@ const QuestionnairePage: React.FC = () => {
 
 
     const buildSummaryItems = (className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
-        const requiresEnglishWritingFocus = classAnswers.classLevel === 'Nursery' && (classAnswers.englishSkill === 'ABCD' || classAnswers.englishSkill === 'SATPIN');
-        const requiresEnglishAssist = (classAnswers.classLevel === 'Nursery' || classAnswers.classLevel === 'LKG') && !!classAnswers.englishSkill && classAnswers.englishSkill !== 'Jolly Phonics';
-        const englishSelectionComplete = !!classAnswers.englishSkill
-            && (!requiresEnglishWritingFocus || !!classAnswers.englishSkillWritingFocus)
-            && (!requiresEnglishAssist || classAnswers.englishWorkbookAssist !== null);
-
-        const requiresMathAssist = classAnswers.classLevel === 'Nursery' || classAnswers.classLevel === 'LKG';
-        const mathSelectionComplete = !!classAnswers.mathSkill
-            && (!requiresMathAssist || classAnswers.mathWorkbookAssist !== null);
+        const englishSelectionComplete = isEnglishSelectionComplete(classAnswers);
+        const mathSelectionComplete = isMathSelectionComplete(classAnswers);
 
         const summaryItems: SummaryItem[] = [];
 
