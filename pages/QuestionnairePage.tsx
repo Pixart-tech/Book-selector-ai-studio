@@ -6,6 +6,52 @@ import { useAuth } from '../hooks/useAuth';
 import { saveSelection } from '../services/api';
 import { CATALOG } from '../data/catalog';
 
+type ClassLevel = 'Nursery' | 'LKG' | 'UKG';
+
+type ClassTheme = {
+    bgColor50: string;
+    bgColor600: string;
+    border200: string;
+    border500: string;
+    border600: string;
+    text600: string;
+    text700: string;
+    hoverBg50: string;
+    hoverBg100: string;
+    hoverBg700: string;
+    hoverText800: string;
+    hoverBorder400: string;
+    focusRing500: string;
+    focusWithinRing500: string;
+    focusWithinBorder500: string;
+    ring500: string;
+};
+
+const createTheme = (accent: string): ClassTheme => ({
+    bgColor50: `bg-${accent}-50`,
+    bgColor600: `bg-${accent}-600`,
+    border200: `border-${accent}-200`,
+    border500: `border-${accent}-500`,
+    border600: `border-${accent}-600`,
+    text600: `text-${accent}-600`,
+    text700: `text-${accent}-700`,
+    hoverBg50: `hover:bg-${accent}-50`,
+    hoverBg100: `hover:bg-${accent}-100`,
+    hoverBg700: `hover:bg-${accent}-700`,
+    hoverText800: `hover:text-${accent}-800`,
+    hoverBorder400: `hover:border-${accent}-400`,
+    focusRing500: `focus:ring-${accent}-500`,
+    focusWithinRing500: `focus-within:ring-${accent}-500`,
+    focusWithinBorder500: `focus-within:border-${accent}-500`,
+    ring500: `ring-${accent}-500`,
+});
+
+const CLASS_THEME: Record<ClassLevel, ClassTheme> = {
+    Nursery: createTheme('emerald'),
+    LKG: createTheme('amber'),
+    UKG: createTheme('violet'),
+};
+
 // --- OPTIONS CONFIGURATION ---
 const OPTIONS = {
   englishSkill: {
@@ -123,9 +169,9 @@ const isMathSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
 };
 
 // --- UI COMPONENTS ---
-const RadioCard = ({ id, name, value, label, description, checked, onChange }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+const RadioCard = ({ id, name, value, label, description, checked, onChange, theme }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, theme: ClassTheme }) => (
     <label
-        className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}
+        className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 ${theme.focusWithinRing500} ${theme.focusWithinBorder500} ${checked ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}` : `bg-white border-gray-300 ${theme.hoverBorder400}`}`}
     >
         <div className="flex items-center h-5">
             <input
@@ -135,7 +181,7 @@ const RadioCard = ({ id, name, value, label, description, checked, onChange }: {
                 value={value}
                 checked={checked}
                 onChange={onChange}
-                className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+                className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300`}
             />
         </div>
         <div className="ml-3 text-sm">
@@ -145,9 +191,9 @@ const RadioCard = ({ id, name, value, label, description, checked, onChange }: {
     </label>
 );
 
-const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
-    <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500' : 'bg-white border-gray-300 hover:border-primary-400'}`}>
-        <div className="flex items-center h-5"><input id={id} name={name} type="checkbox" checked={checked} onChange={onChange} className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"/></div>
+const CheckboxCard = ({ id, name, label, description, checked, onChange, theme }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, theme: ClassTheme }) => (
+    <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}` : `bg-white border-gray-300 ${theme.hoverBorder400}`}`}>
+        <div className="flex items-center h-5"><input id={id} name={name} type="checkbox" checked={checked} onChange={onChange} className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300 rounded`}/></div>
         <div className="ml-3 text-sm">
             <label htmlFor={id} className="font-medium text-gray-900 cursor-pointer">{label}</label>
             <p className="text-gray-500">{description}</p>
@@ -155,16 +201,14 @@ const CheckboxCard = ({ id, name, label, description, checked, onChange }: { id:
     </div>
 );
 
-const BookPreviewLink: React.FC<{ bookId: string | null; label: string }> = ({ bookId, label }) => {
+const BookPreviewLink: React.FC<{ bookId: string | null; label: string; theme: ClassTheme }> = ({ bookId, label, theme }) => {
     if (!bookId) return null;
     return (
-        <Link to={`/pdf/${bookId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary-600 hover:underline hover:text-primary-800 transition-colors">
+        <Link to={`/pdf/${bookId}`} target="_blank" rel="noopener noreferrer" className={`text-sm font-semibold ${theme.text600} hover:underline ${theme.hoverText800} transition-colors`}>
             {label} ↗
         </Link>
     );
 };
-
-type ClassLevel = 'Nursery' | 'LKG' | 'UKG';
 
 // --- MAIN PAGE COMPONENT ---
 const QuestionnairePage: React.FC = () => {
@@ -202,6 +246,7 @@ const QuestionnairePage: React.FC = () => {
 
     const currentClass = classOrder[currentClassIndex];
     const answers = allAnswers[currentClass];
+    const theme = useMemo(() => CLASS_THEME[currentClass], [currentClass]);
     
     const updateClassAnswers = useCallback((className: ClassLevel, updater: (current: QuestionnaireAnswers) => QuestionnaireAnswers) => {
         setStatus('idle');
@@ -630,26 +675,38 @@ const QuestionnairePage: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-1">Choose English Skill Variant</h2>
                     <p className="text-gray-600 mb-4">The English Workbook will automatically match your selection.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {OPTIONS.englishSkill[currentClass].map(skill => (<RadioCard key={skill} id={`eng-${skill}`} name="englishSkill" value={skill} label={skill} description={skill === 'LTI' ? "Caps only writing" : "Select one option"} checked={answers.englishSkill === skill} onChange={e => setAnswers({ englishSkill: e.target.value, englishWorkbookAssist: null, englishSkillWritingFocus: null })} />))}
+                        {OPTIONS.englishSkill[currentClass].map(skill => (
+                            <RadioCard
+                                key={skill}
+                                id={`eng-${skill}`}
+                                name="englishSkill"
+                                value={skill}
+                                label={skill}
+                                description={skill === 'LTI' ? 'Caps only writing' : 'Select one option'}
+                                checked={answers.englishSkill === skill}
+                                onChange={e => setAnswers({ englishSkill: e.target.value, englishWorkbookAssist: null, englishSkillWritingFocus: null })}
+                                theme={theme}
+                            />
+                        ))}
                     </div>
                     {showWritingFocus && (<div className="mt-6 border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">What do you focus on writing?</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <RadioCard id="focus-caps" name="writingFocus" value="Caps" label="Caps" description="" checked={answers.englishSkillWritingFocus === 'Caps'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps' })} />
-                            <RadioCard id="focus-small" name="writingFocus" value="Small" label="Small" description="" checked={answers.englishSkillWritingFocus === 'Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Small' })} />
-                            <RadioCard id="focus-caps-small" name="writingFocus" value="Caps & Small" label="Caps & Small" description="" checked={answers.englishSkillWritingFocus === 'Caps & Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps & Small' })} />
+                            <RadioCard id="focus-caps" name="writingFocus" value="Caps" label="Caps" description="" checked={answers.englishSkillWritingFocus === 'Caps'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps' })} theme={theme} />
+                            <RadioCard id="focus-small" name="writingFocus" value="Small" label="Small" description="" checked={answers.englishSkillWritingFocus === 'Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Small' })} theme={theme} />
+                            <RadioCard id="focus-caps-small" name="writingFocus" value="Caps & Small" label="Caps & Small" description="" checked={answers.englishSkillWritingFocus === 'Caps & Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps & Small' })} theme={theme} />
                         </div>
                     </div>)}
                     {shouldAskForAssist && (<div className="mt-6 border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">English Workbook Writing Assist</h3>
                         <div className="flex gap-4">
-                            <RadioCard id="assist-yes" name="englishWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.englishWorkbookAssist === true} onChange={() => setAnswers({ englishWorkbookAssist: true })} />
-                            <RadioCard id="assist-no" name="englishWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.englishWorkbookAssist === false} onChange={() => setAnswers({ englishWorkbookAssist: false })} />
+                            <RadioCard id="assist-yes" name="englishWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.englishWorkbookAssist === true} onChange={() => setAnswers({ englishWorkbookAssist: true })} theme={theme} />
+                            <RadioCard id="assist-no" name="englishWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.englishWorkbookAssist === false} onChange={() => setAnswers({ englishWorkbookAssist: false })} theme={theme} />
                         </div>
                     </div>)}
-                    {isSkillSelectionComplete && <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
-                        <BookPreviewLink bookId={bookIds.englishSkill} label="View Skill Book" />
-                        <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" />
+                    {isSkillSelectionComplete && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                        <BookPreviewLink bookId={bookIds.englishSkill} label="View Skill Book" theme={theme} />
+                        <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" theme={theme} />
                     </div>}
                 </div>);
             case 2: // Math
@@ -658,20 +715,32 @@ const QuestionnairePage: React.FC = () => {
                     <p className="text-gray-600 mb-2">The Math Workbook will automatically match this selection.</p>
                     <p className="text-sm text-gray-500 mb-4">All variants include pre-math concepts, basic shapes and colours.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {OPTIONS.mathSkill[currentClass].map(skill => (<RadioCard key={skill} id={`math-${skill}`} name="mathSkill" value={skill} label={skill} description="" checked={answers.mathSkill === skill} onChange={e => setAnswers({ mathSkill: e.target.value, mathWorkbookAssist: null })} />))}
+                        {OPTIONS.mathSkill[currentClass].map(skill => (
+                            <RadioCard
+                                key={skill}
+                                id={`math-${skill}`}
+                                name="mathSkill"
+                                value={skill}
+                                label={skill}
+                                description=""
+                                checked={answers.mathSkill === skill}
+                                onChange={e => setAnswers({ mathSkill: e.target.value, mathWorkbookAssist: null })}
+                                theme={theme}
+                            />
+                        ))}
                     </div>
                     {(currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill && (
                         <div className="mt-6 border-t pt-6">
                             <h3 className="text-lg font-semibold mb-2">Math Workbook Writing Assist</h3>
                             <div className="flex gap-4">
-                                <RadioCard id="math-assist-yes" name="mathWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.mathWorkbookAssist === true} onChange={() => setAnswers({ mathWorkbookAssist: true })} />
-                                <RadioCard id="math-assist-no" name="mathWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.mathWorkbookAssist === false} onChange={() => setAnswers({ mathWorkbookAssist: false })} />
+                                <RadioCard id="math-assist-yes" name="mathWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.mathWorkbookAssist === true} onChange={() => setAnswers({ mathWorkbookAssist: true })} theme={theme} />
+                                <RadioCard id="math-assist-no" name="mathWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.mathWorkbookAssist === false} onChange={() => setAnswers({ mathWorkbookAssist: false })} theme={theme} />
                             </div>
                         </div>
                     )}
-                    {answers.mathSkill && ((currentClass !== 'Nursery' && currentClass !== 'LKG') || answers.mathWorkbookAssist !== null) && <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
-                        <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" />
-                        <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" />
+                    {answers.mathSkill && ((currentClass !== 'Nursery' && currentClass !== 'LKG') || answers.mathWorkbookAssist !== null) && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                        <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" theme={theme} />
+                        <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" theme={theme} />
                     </div>}
                 </div>);
             case 3: // Assessment
@@ -679,11 +748,23 @@ const QuestionnairePage: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-1">Assessment Type</h2>
                     <p className="text-gray-600 mb-4">Select the assessment format for the academic year.</p>
                     <div className="space-y-4">
-                        {OPTIONS.assessment.map(type => (<RadioCard key={type.value} id={`assess-${type.value}`} name="assessment" value={type.value} label={type.value} description={type.description} checked={answers.assessment === type.value} onChange={e => setAnswers({ assessment: e.target.value as any })} />))}
+                        {OPTIONS.assessment.map(type => (
+                            <RadioCard
+                                key={type.value}
+                                id={`assess-${type.value}`}
+                                name="assessment"
+                                value={type.value}
+                                label={type.value}
+                                description={type.description}
+                                checked={answers.assessment === type.value}
+                                onChange={e => setAnswers({ assessment: e.target.value as any })}
+                                theme={theme}
+                            />
+                        ))}
                     </div>
                     {answers.assessment && (
-                        <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg flex items-center justify-around">
-                            <BookPreviewLink bookId={bookIds.assessment} label="View Assessment Book" />
+                        <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                            <BookPreviewLink bookId={bookIds.assessment} label="View Assessment Book" theme={theme} />
                         </div>
                     )}
                 </div>);
@@ -692,14 +773,14 @@ const QuestionnairePage: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-1">Core Subjects</h2>
                     <p className="text-gray-600 mb-4">These subjects are included by default, but you can opt out.</p>
                     <div className="space-y-4">
-                        <CheckboxCard id="evs" name="evs" label="EVS" description="Concepts: My body, family, school, animals, transport, seasons, etc." checked={answers.includeEVS} onChange={e => setAnswers({ includeEVS: e.target.checked })}/>
-                        <CheckboxCard id="rhymes" name="rhymes" label="Rhymes & Stories" description="Customise 25 rhymes & 5 stories, or select our default book." checked={answers.includeRhymes} onChange={e => setAnswers({ includeRhymes: e.target.checked })}/>
-                        <CheckboxCard id="art" name="art" label="Art & Craft" description="Age-appropriate colouring and simple craft activities." checked={answers.includeArt} onChange={e => setAnswers({ includeArt: e.target.checked })}/>
+                        <CheckboxCard id="evs" name="evs" label="EVS" description="Concepts: My body, family, school, animals, transport, seasons, etc." checked={answers.includeEVS} onChange={e => setAnswers({ includeEVS: e.target.checked })} theme={theme}/>
+                        <CheckboxCard id="rhymes" name="rhymes" label="Rhymes & Stories" description="Customise 25 rhymes & 5 stories, or select our default book." checked={answers.includeRhymes} onChange={e => setAnswers({ includeRhymes: e.target.checked })} theme={theme}/>
+                        <CheckboxCard id="art" name="art" label="Art & Craft" description="Age-appropriate colouring and simple craft activities." checked={answers.includeArt} onChange={e => setAnswers({ includeArt: e.target.checked })} theme={theme}/>
                     </div>
-                    <div className="mt-6 p-3 bg-primary-50 border border-primary-200 rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-2 items-center justify-around text-center">
-                        {answers.includeEVS && <BookPreviewLink bookId={bookIds.evs} label="View EVS Book" />}
-                        {answers.includeRhymes && <BookPreviewLink bookId={bookIds.rhymes} label="View Rhymes Book" />}
-                        {answers.includeArt && <BookPreviewLink bookId={bookIds.art} label="View Art Book" />}
+                    <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg grid grid-cols-1 sm:grid-cols-3 gap-2 items-center justify-around text-center`}>
+                        {answers.includeEVS && <BookPreviewLink bookId={bookIds.evs} label="View EVS Book" theme={theme} />}
+                        {answers.includeRhymes && <BookPreviewLink bookId={bookIds.rhymes} label="View Rhymes Book" theme={theme} />}
+                        {answers.includeArt && <BookPreviewLink bookId={bookIds.art} label="View Art Book" theme={theme} />}
                     </div>
                 </div>);
             case 5: { // Languages
@@ -786,6 +867,7 @@ const QuestionnairePage: React.FC = () => {
                                     description=""
                                     checked={answers.languages.count === index}
                                     onChange={event => handleCountSelection(Number(event.target.value) as 0 | 1 | 2)}
+                                    theme={theme}
                                 />
                             ))}
                         </div>
@@ -814,10 +896,10 @@ const QuestionnairePage: React.FC = () => {
                                                         onClick={() => toggleLanguageSelection(language)}
                                                         disabled={!isSelected && selectionLimitReached}
                                                         className={`px-3 py-1.5 text-sm font-semibold rounded-md border transition-colors ${isSelected
-                                                            ? 'bg-primary-600 text-white border-primary-600'
+                                                            ? `${theme.bgColor600} text-white ${theme.border600}`
                                                             : (!isSelected && selectionLimitReached)
                                                                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                                : 'bg-white text-primary-600 border-primary-600 hover:bg-primary-50'}`}
+                                                                : `bg-white ${theme.text600} ${theme.border600} ${theme.hoverBg50}`}`}
                                                     >
                                                         {isSelected ? 'Selected' : 'Select'}
                                                     </button>
@@ -829,7 +911,7 @@ const QuestionnairePage: React.FC = () => {
                                                                     key={variant}
                                                                     onClick={() => handleVariantChange(language, variant)}
                                                                     className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${activeVariant === variant
-                                                                        ? 'bg-primary-600 text-white border-primary-600'
+                                                                        ? `${theme.bgColor600} text-white ${theme.border600}`
                                                                         : 'bg-white hover:bg-gray-100'}`}
                                                                 >
                                                                     {variant}
@@ -864,10 +946,10 @@ const QuestionnairePage: React.FC = () => {
                             <div>
                                 <p className="text-sm font-semibold text-gray-800">{item.label}</p>
                                 <p className="text-sm text-gray-600">{item.value}</p>
-                                {item.bookLabel && <div className="mt-1"><BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} /></div>}
+                                {item.bookLabel && <div className="mt-1"><BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} theme={theme} /></div>}
                             </div>
                             <div className="flex gap-2 sm:justify-end">
-                                <button onClick={() => navigateToStep(currentClassIndex, item.step, { fromSummary: 'class' })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                <button onClick={() => navigateToStep(currentClassIndex, item.step, { fromSummary: 'class' })} className={`text-sm font-semibold ${theme.text600} ${theme.hoverText800} px-3 py-1 rounded-md ${theme.hoverBg100}`}>
                                     Edit
                                 </button>
                                 {item.canRemove && item.onRemove && (
@@ -902,11 +984,12 @@ const QuestionnairePage: React.FC = () => {
                     };
 
                     const summaryItems = buildSummaryItems(className, classAnswers, classBookIds);
+                    const summaryTheme = CLASS_THEME[className];
                     return (
                         <div key={className} className="bg-gray-50 border rounded-lg p-4">
                             <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-lg text-primary-700">{className}</h3>
-                                <button onClick={() => handleEditClass(index)} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                <h3 className={`font-bold text-lg ${summaryTheme.text700}`}>{className}</h3>
+                                <button onClick={() => handleEditClass(index)} className={`text-sm font-semibold ${summaryTheme.text600} ${summaryTheme.hoverText800} px-3 py-1 rounded-md ${summaryTheme.hoverBg100}`}>
                                     Edit
                                 </button>
                             </div>
@@ -918,12 +1001,12 @@ const QuestionnairePage: React.FC = () => {
                                             <p className="text-sm text-gray-600">{item.value}</p>
                                             {item.bookLabel && (
                                                 <div className="mt-1">
-                                                    <BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} />
+                                                    <BookPreviewLink bookId={item.bookId || null} label={item.bookLabel} theme={summaryTheme} />
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => navigateToStep(index, item.step, { fromSummary: 'final' })} className="text-sm font-semibold text-primary-600 hover:text-primary-800 px-3 py-1 rounded-md hover:bg-primary-100">
+                                            <button onClick={() => navigateToStep(index, item.step, { fromSummary: 'final' })} className={`text-sm font-semibold ${summaryTheme.text600} ${summaryTheme.hoverText800} px-3 py-1 rounded-md ${summaryTheme.hoverBg100}`}>
                                                 Edit
                                             </button>
                                             {item.canRemove && item.onRemove && (
@@ -954,15 +1037,15 @@ const QuestionnairePage: React.FC = () => {
             <div className="flex justify-between items-center mb-2">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Book Package Questionnaire</h1>
-                    {!showFinalSummary && <p className="text-md font-semibold text-primary-700">Configuring: {currentClass}</p>}
+                    {!showFinalSummary && <p className={`text-md font-semibold ${theme.text700}`}>Configuring: {currentClass}</p>}
                 </div>
                 {!showFinalSummary && <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>}
             </div>
             {!showFinalSummary && <>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div className="bg-primary-600 h-2.5 rounded-full" style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
+                    <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
                 </div>
-                <div className="mt-3 text-sm font-semibold text-primary-700">
+                <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
                     <span>Base selected: {progress.base}/8</span>
                     {currentClass !== 'Nursery' && (
                         <>
@@ -989,13 +1072,13 @@ const QuestionnairePage: React.FC = () => {
             {summaryReturnTarget === 'final' && !showFinalSummary && (
               <button
                 onClick={returnToSummary}
-                className="border border-primary-600 text-primary-600 px-6 py-2 rounded-md hover:bg-primary-50"
+                className={`border ${theme.border600} ${theme.text600} px-6 py-2 rounded-md ${theme.hoverBg50}`}
               >
                 Return to Final Summary
               </button>
             )}
             {!showFinalSummary && (
-              <button onClick={handleNext} className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700">
+              <button onClick={handleNext} className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700}`}>
                 {step === totalStepsPerClass
                     ? (summaryReturnTarget
                         ? 'Next'
