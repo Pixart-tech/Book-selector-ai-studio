@@ -179,27 +179,55 @@ const isMathWorkbookReady = (answers: QuestionnaireAnswers): boolean => {
 };
 
 // --- UI COMPONENTS ---
-const RadioCard = ({ id, name, value, label, description, checked, onChange, theme }: { id: string, name: string, value: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, theme: ClassTheme }) => (
-    <label
-        className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 ${theme.focusWithinRing500} ${theme.focusWithinBorder500} ${checked ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}` : `bg-white border-gray-300 ${theme.hoverBorder400}`}`}
-    >
-        <div className="flex items-center h-5">
-            <input
-                id={id}
-                name={name}
-                type="radio"
-                value={value}
-                checked={checked}
-                onChange={onChange}
-                className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300`}
-            />
-        </div>
-        <div className="ml-3 text-sm">
-            <span className="font-medium text-gray-900">{label}</span>
-            {description && <p className="text-gray-500">{description}</p>}
-        </div>
-    </label>
-);
+type RadioCardProps = {
+    id: string;
+    name: string;
+    value: string;
+    label: string;
+    description?: string;
+    checked: boolean;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSelect?: (value: string, checked: boolean, event: React.MouseEvent<HTMLInputElement>) => void;
+    theme: ClassTheme;
+};
+
+const RadioCard: React.FC<RadioCardProps> = ({
+    id,
+    name,
+    value,
+    label,
+    description,
+    checked,
+    onChange,
+    onSelect,
+    theme,
+}) => {
+    const baseClasses = `relative flex items-start p-4 border rounded-lg cursor-pointer transition-all focus-within:ring-2 ${theme.focusWithinRing500} ${theme.focusWithinBorder500}`;
+    const stateClasses = checked
+        ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}`
+        : `bg-white border-gray-300 ${theme.hoverBorder400}`;
+
+    return (
+        <label className={`${baseClasses} ${stateClasses}`}>
+            <div className="flex items-center h-5">
+                <input
+                    id={id}
+                    name={name}
+                    type="radio"
+                    value={value}
+                    checked={checked}
+                    onChange={onChange}
+                    onClick={event => onSelect?.(value, checked, event)}
+                    className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300`}
+                />
+            </div>
+            <div className="ml-3 text-sm">
+                <span className="font-medium text-gray-900">{label}</span>
+                {description && <p className="text-gray-500">{description}</p>}
+            </div>
+        </label>
+    );
+};
 
 const CheckboxCard = ({
     id,
@@ -799,6 +827,41 @@ const QuestionnairePage: React.FC = () => {
                 const showWorkbookPreview = answers.includeEnglishWorkbook
                     && isEnglishWorkbookReady(answers);
 
+                const handleEnglishSkillSelection = (skill: string) => {
+                    if (answers.englishSkill === skill) {
+                        return;
+                    }
+                    setAnswers({
+                        englishSkill: skill,
+                        englishWorkbookAssist: null,
+                        englishSkillWritingFocus: null,
+                        includeEnglishWorkbook: true,
+                    });
+                };
+
+                const handleEnglishSkillClick = (skill: string, wasChecked: boolean) => {
+                    if (!wasChecked || answers.englishSkill !== skill) {
+                        return;
+                    }
+                    setAnswers({
+                        englishSkill: null,
+                        englishSkillWritingFocus: null,
+                        englishWorkbookAssist: null,
+                    });
+                };
+
+                const handleWritingFocusChange = (focus: 'Caps' | 'Small' | 'Caps & Small') => {
+                    setAnswers({
+                        englishSkillWritingFocus: answers.englishSkillWritingFocus === focus ? null : focus,
+                    });
+                };
+
+                const handleEnglishWorkbookAssistChange = (value: boolean) => {
+                    setAnswers({
+                        englishWorkbookAssist: answers.englishWorkbookAssist === value ? null : value,
+                    });
+                };
+
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose English Skill Variant</h2>
                     <p className="text-gray-600 mb-4">The English Workbook will automatically match your selection.</p>
@@ -812,12 +875,8 @@ const QuestionnairePage: React.FC = () => {
                                 label={skill}
                                 description={skill === 'LTI' ? 'Caps only writing' : 'Select one option'}
                                 checked={answers.englishSkill === skill}
-                                onChange={e => setAnswers({
-                                    englishSkill: e.target.value,
-                                    englishWorkbookAssist: null,
-                                    englishSkillWritingFocus: null,
-                                    includeEnglishWorkbook: true,
-                                })}
+                                onChange={() => handleEnglishSkillSelection(skill)}
+                                onSelect={(_, wasChecked) => handleEnglishSkillClick(skill, wasChecked)}
                                 theme={theme}
                             />
                         ))}
@@ -825,16 +884,86 @@ const QuestionnairePage: React.FC = () => {
                     {showWritingFocus && (<div className="mt-6 border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">What do you focus on writing?</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <RadioCard id="focus-caps" name="writingFocus" value="Caps" label="Caps" description="" checked={answers.englishSkillWritingFocus === 'Caps'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps' })} theme={theme} />
-                            <RadioCard id="focus-small" name="writingFocus" value="Small" label="Small" description="" checked={answers.englishSkillWritingFocus === 'Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Small' })} theme={theme} />
-                            <RadioCard id="focus-caps-small" name="writingFocus" value="Caps & Small" label="Caps & Small" description="" checked={answers.englishSkillWritingFocus === 'Caps & Small'} onChange={() => setAnswers({ englishSkillWritingFocus: 'Caps & Small' })} theme={theme} />
+                            <RadioCard
+                                id="focus-caps"
+                                name="writingFocus"
+                                value="Caps"
+                                label="Caps"
+                                description=""
+                                checked={answers.englishSkillWritingFocus === 'Caps'}
+                                onChange={() => handleWritingFocusChange('Caps')}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleWritingFocusChange('Caps');
+                                    }
+                                }}
+                                theme={theme}
+                            />
+                            <RadioCard
+                                id="focus-small"
+                                name="writingFocus"
+                                value="Small"
+                                label="Small"
+                                description=""
+                                checked={answers.englishSkillWritingFocus === 'Small'}
+                                onChange={() => handleWritingFocusChange('Small')}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleWritingFocusChange('Small');
+                                    }
+                                }}
+                                theme={theme}
+                            />
+                            <RadioCard
+                                id="focus-caps-small"
+                                name="writingFocus"
+                                value="Caps & Small"
+                                label="Caps & Small"
+                                description=""
+                                checked={answers.englishSkillWritingFocus === 'Caps & Small'}
+                                onChange={() => handleWritingFocusChange('Caps & Small')}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleWritingFocusChange('Caps & Small');
+                                    }
+                                }}
+                                theme={theme}
+                            />
                         </div>
                     </div>)}
                     {shouldAskForAssist && (<div className="mt-6 border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">English Workbook Writing Assist</h3>
                         <div className="flex gap-4">
-                            <RadioCard id="assist-yes" name="englishWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.englishWorkbookAssist === true} onChange={() => setAnswers({ englishWorkbookAssist: true })} theme={theme} />
-                            <RadioCard id="assist-no" name="englishWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.englishWorkbookAssist === false} onChange={() => setAnswers({ englishWorkbookAssist: false })} theme={theme} />
+                            <RadioCard
+                                id="assist-yes"
+                                name="englishWorkbookAssist"
+                                value="yes"
+                                label="Yes"
+                                description="All rows dotted."
+                                checked={answers.englishWorkbookAssist === true}
+                                onChange={() => handleEnglishWorkbookAssistChange(true)}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleEnglishWorkbookAssistChange(true);
+                                    }
+                                }}
+                                theme={theme}
+                            />
+                            <RadioCard
+                                id="assist-no"
+                                name="englishWorkbookAssist"
+                                value="no"
+                                label="No"
+                                description="Only first 2 rows dotted."
+                                checked={answers.englishWorkbookAssist === false}
+                                onChange={() => handleEnglishWorkbookAssistChange(false)}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleEnglishWorkbookAssistChange(false);
+                                    }
+                                }}
+                                theme={theme}
+                            />
                         </div>
                     </div>)}
                     {isEnglishSkillReadyForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
@@ -846,6 +975,33 @@ const QuestionnairePage: React.FC = () => {
                 const isMathSkillReadyForPreview = isMathSkillReady(answers);
                 const showMathWorkbookPreview = answers.includeMathWorkbook
                     && isMathWorkbookReady(answers);
+
+                const handleMathSkillSelection = (skill: string) => {
+                    if (answers.mathSkill === skill) {
+                        return;
+                    }
+                    setAnswers({
+                        mathSkill: skill,
+                        mathWorkbookAssist: null,
+                        includeMathWorkbook: true,
+                    });
+                };
+
+                const handleMathSkillClick = (skill: string, wasChecked: boolean) => {
+                    if (!wasChecked || answers.mathSkill !== skill) {
+                        return;
+                    }
+                    setAnswers({
+                        mathSkill: null,
+                        mathWorkbookAssist: null,
+                    });
+                };
+
+                const handleMathWorkbookAssistChange = (value: boolean) => {
+                    setAnswers({
+                        mathWorkbookAssist: answers.mathWorkbookAssist === value ? null : value,
+                    });
+                };
 
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose Math Skill Variant</h2>
@@ -861,11 +1017,8 @@ const QuestionnairePage: React.FC = () => {
                                 label={skill}
                                 description=""
                                 checked={answers.mathSkill === skill}
-                                onChange={e => setAnswers({
-                                    mathSkill: e.target.value,
-                                    mathWorkbookAssist: null,
-                                    includeMathWorkbook: true,
-                                })}
+                                onChange={() => handleMathSkillSelection(skill)}
+                                onSelect={(_, wasChecked) => handleMathSkillClick(skill, wasChecked)}
                                 theme={theme}
                             />
                         ))}
@@ -874,8 +1027,36 @@ const QuestionnairePage: React.FC = () => {
                         <div className="mt-6 border-t pt-6">
                             <h3 className="text-lg font-semibold mb-2">Math Workbook Writing Assist</h3>
                             <div className="flex gap-4">
-                                <RadioCard id="math-assist-yes" name="mathWorkbookAssist" value="yes" label="Yes" description="All rows dotted." checked={answers.mathWorkbookAssist === true} onChange={() => setAnswers({ mathWorkbookAssist: true })} theme={theme} />
-                                <RadioCard id="math-assist-no" name="mathWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.mathWorkbookAssist === false} onChange={() => setAnswers({ mathWorkbookAssist: false })} theme={theme} />
+                                <RadioCard
+                                    id="math-assist-yes"
+                                    name="mathWorkbookAssist"
+                                    value="yes"
+                                    label="Yes"
+                                    description="All rows dotted."
+                                    checked={answers.mathWorkbookAssist === true}
+                                    onChange={() => handleMathWorkbookAssistChange(true)}
+                                    onSelect={(_, wasChecked) => {
+                                        if (wasChecked) {
+                                            handleMathWorkbookAssistChange(true);
+                                        }
+                                    }}
+                                    theme={theme}
+                                />
+                                <RadioCard
+                                    id="math-assist-no"
+                                    name="mathWorkbookAssist"
+                                    value="no"
+                                    label="No"
+                                    description="Only first 2 rows dotted."
+                                    checked={answers.mathWorkbookAssist === false}
+                                    onChange={() => handleMathWorkbookAssistChange(false)}
+                                    onSelect={(_, wasChecked) => {
+                                        if (wasChecked) {
+                                            handleMathWorkbookAssistChange(false);
+                                        }
+                                    }}
+                                    theme={theme}
+                                />
                             </div>
                         </div>
                     )}
@@ -885,6 +1066,12 @@ const QuestionnairePage: React.FC = () => {
                     </div>}
                 </div>);
             case 3: // Assessment
+                const handleAssessmentChange = (value: QuestionnaireAnswers['assessment']) => {
+                    setAnswers({
+                        assessment: answers.assessment === value ? null : value,
+                    });
+                };
+
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Assessment Type</h2>
                     <p className="text-gray-600 mb-4">Select the assessment format for the academic year.</p>
@@ -898,7 +1085,12 @@ const QuestionnairePage: React.FC = () => {
                                 label={type.value}
                                 description={type.description}
                                 checked={answers.assessment === type.value}
-                                onChange={e => setAnswers({ assessment: e.target.value as any })}
+                                onChange={() => handleAssessmentChange(type.value as QuestionnaireAnswers['assessment'])}
+                                onSelect={(_, wasChecked) => {
+                                    if (wasChecked) {
+                                        handleAssessmentChange(type.value as QuestionnaireAnswers['assessment']);
+                                    }
+                                }}
                                 theme={theme}
                             />
                         ))}
