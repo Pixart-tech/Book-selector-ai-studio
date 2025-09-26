@@ -950,11 +950,15 @@ const QuestionnairePage: React.FC = () => {
                 </div>
                 <div className="mt-3 text-sm font-semibold text-primary-700">
                     <span>Base selected: {progress.base}/8</span>
-                    <span className="mx-2">•</span>
-                    <span>
-                        Languages: {progress.languagesSelected}
-                        {progress.languagesDesired > 0 ? `/${progress.languagesDesired}` : ''}
-                    </span>
+                    {currentClass !== 'Nursery' && (
+                        <>
+                            <span className="mx-2">•</span>
+                            <span>
+                                Languages: {progress.languagesSelected}
+                                {progress.languagesDesired > 0 ? `/${progress.languagesDesired}` : ''}
+                            </span>
+                        </>
+                    )}
                 </div>
             </>}
         </div>
