@@ -149,25 +149,33 @@ const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
     return answers.mathSkill;
 };
 
-const isEnglishSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
+const isEnglishSkillReady = (answers: QuestionnaireAnswers): boolean => {
     const requiresWritingFocus = answers.classLevel === 'Nursery'
         && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
-    const requiresAssist = answers.includeEnglishWorkbook
-        && (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
+    return !!answers.englishSkill
+        && (!requiresWritingFocus || !!answers.englishSkillWritingFocus);
+};
+
+const isEnglishWorkbookReady = (answers: QuestionnaireAnswers): boolean => {
+    if (!answers.includeEnglishWorkbook) return false;
+    if (!isEnglishSkillReady(answers)) return false;
+
+    const requiresAssist = (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
         && !!answers.englishSkill
         && answers.englishSkill !== 'Jolly Phonics';
 
-    return !!answers.englishSkill
-        && (!requiresWritingFocus || !!answers.englishSkillWritingFocus)
-        && (!requiresAssist || answers.englishWorkbookAssist !== null);
+    return !requiresAssist || answers.englishWorkbookAssist !== null;
 };
 
-const isMathSelectionComplete = (answers: QuestionnaireAnswers): boolean => {
-    const requiresAssist = answers.includeMathWorkbook
-        && (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG');
+const isMathSkillReady = (answers: QuestionnaireAnswers): boolean => !!answers.mathSkill;
 
-    return !!answers.mathSkill
-        && (!requiresAssist || answers.mathWorkbookAssist !== null);
+const isMathWorkbookReady = (answers: QuestionnaireAnswers): boolean => {
+    if (!answers.includeMathWorkbook) return false;
+    if (!isMathSkillReady(answers)) return false;
+
+    const requiresAssist = answers.classLevel === 'Nursery' || answers.classLevel === 'LKG';
+
+    return !requiresAssist || answers.mathWorkbookAssist !== null;
 };
 
 // --- UI COMPONENTS ---
@@ -447,17 +455,17 @@ const QuestionnairePage: React.FC = () => {
 
     const progress = useMemo(() => {
         let coreBooksSelected = 0;
-        if (isEnglishSelectionComplete(answers)) {
+        if (isEnglishSkillReady(answers)) {
             coreBooksSelected += 1;
-            if (answers.includeEnglishWorkbook) {
-                coreBooksSelected += 1;
-            }
         }
-        if (isMathSelectionComplete(answers)) {
+        if (answers.includeEnglishWorkbook && isEnglishWorkbookReady(answers)) {
             coreBooksSelected += 1;
-            if (answers.includeMathWorkbook) {
-                coreBooksSelected += 1;
-            }
+        }
+        if (isMathSkillReady(answers)) {
+            coreBooksSelected += 1;
+        }
+        if (answers.includeMathWorkbook && isMathWorkbookReady(answers)) {
+            coreBooksSelected += 1;
         }
         if (answers.assessment) coreBooksSelected++;
 
@@ -633,12 +641,14 @@ const QuestionnairePage: React.FC = () => {
 
 
     const buildSummaryItems = (className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
-        const englishSelectionComplete = isEnglishSelectionComplete(classAnswers);
-        const mathSelectionComplete = isMathSelectionComplete(classAnswers);
+        const englishSkillReady = isEnglishSkillReady(classAnswers);
+        const englishWorkbookReady = isEnglishWorkbookReady(classAnswers);
+        const mathSkillReady = isMathSkillReady(classAnswers);
+        const mathWorkbookReady = isMathWorkbookReady(classAnswers);
 
         const summaryItems: SummaryItem[] = [];
 
-        if (englishSelectionComplete) {
+        if (englishSkillReady) {
             summaryItems.push({
                 key: 'english-skill',
                 label: 'English Skill Book',
@@ -650,7 +660,7 @@ const QuestionnairePage: React.FC = () => {
                 bookLabel: 'View English Skill Book',
             });
 
-            if (classAnswers.includeEnglishWorkbook) {
+            if (classAnswers.includeEnglishWorkbook && englishWorkbookReady) {
                 summaryItems.push({
                     key: 'english-workbook',
                     label: 'English Workbook',
@@ -664,7 +674,7 @@ const QuestionnairePage: React.FC = () => {
             }
         }
 
-        if (mathSelectionComplete) {
+        if (mathSkillReady) {
             summaryItems.push({
                 key: 'math-skill',
                 label: 'Math Skill Book',
@@ -676,7 +686,7 @@ const QuestionnairePage: React.FC = () => {
                 bookLabel: 'View Math Skill Book',
             });
 
-            if (classAnswers.includeMathWorkbook) {
+            if (classAnswers.includeMathWorkbook && mathWorkbookReady) {
                 summaryItems.push({
                     key: 'math-workbook',
                     label: 'Math Workbook',
@@ -785,10 +795,9 @@ const QuestionnairePage: React.FC = () => {
                     && answers.englishSkill !== 'Jolly Phonics'
                     && answers.includeEnglishWorkbook;
 
-                const isSkillSelectionComplete = isEnglishSelectionComplete(answers);
+                const isEnglishSkillReadyForPreview = isEnglishSkillReady(answers);
                 const showWorkbookPreview = answers.includeEnglishWorkbook
-                    && !!answers.englishSkill
-                    && (!shouldAskForAssist || answers.englishWorkbookAssist !== null);
+                    && isEnglishWorkbookReady(answers);
 
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose English Skill Variant</h2>
@@ -828,18 +837,15 @@ const QuestionnairePage: React.FC = () => {
                             <RadioCard id="assist-no" name="englishWorkbookAssist" value="no" label="No" description="Only first 2 rows dotted." checked={answers.englishWorkbookAssist === false} onChange={() => setAnswers({ englishWorkbookAssist: false })} theme={theme} />
                         </div>
                     </div>)}
-                    {isSkillSelectionComplete && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                    {isEnglishSkillReadyForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
                         <BookPreviewLink bookId={bookIds.englishSkill} label="View Skill Book" theme={theme} />
                         {showWorkbookPreview && <BookPreviewLink bookId={bookIds.englishWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
                 </div>);
             case 2: // Math
-                const isMathSelectionCompleteForPreview = isMathSelectionComplete(answers);
+                const isMathSkillReadyForPreview = isMathSkillReady(answers);
                 const showMathWorkbookPreview = answers.includeMathWorkbook
-                    && !!answers.mathSkill
-                    && ((currentClass === 'Nursery' || currentClass === 'LKG')
-                        ? answers.mathWorkbookAssist !== null
-                        : true);
+                    && isMathWorkbookReady(answers);
 
                 return (<div>
                     <h2 className="text-xl font-semibold mb-1">Choose Math Skill Variant</h2>
@@ -873,7 +879,7 @@ const QuestionnairePage: React.FC = () => {
                             </div>
                         </div>
                     )}
-                    {isMathSelectionCompleteForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
+                    {isMathSkillReadyForPreview && <div className={`mt-6 p-3 ${theme.bgColor50} border ${theme.border200} rounded-lg flex items-center justify-around`}>
                         <BookPreviewLink bookId={bookIds.mathSkill} label="View Skill Book" theme={theme} />
                         {showMathWorkbookPreview && <BookPreviewLink bookId={bookIds.mathWorkbook} label="View Workbook" theme={theme} />}
                     </div>}
