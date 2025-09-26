@@ -191,15 +191,84 @@ const RadioCard = ({ id, name, value, label, description, checked, onChange, the
     </label>
 );
 
-const CheckboxCard = ({ id, name, label, description, checked, onChange, theme }: { id: string, name: string, label: string, description: string, checked: boolean, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, theme: ClassTheme }) => (
-    <div className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${checked ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}` : `bg-white border-gray-300 ${theme.hoverBorder400}`}`}>
-        <div className="flex items-center h-5"><input id={id} name={name} type="checkbox" checked={checked} onChange={onChange} className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300 rounded`}/></div>
-        <div className="ml-3 text-sm">
-            <label htmlFor={id} className="font-medium text-gray-900 cursor-pointer">{label}</label>
-            <p className="text-gray-500">{description}</p>
-        </div>
-    </div>
-);
+const CheckboxCard = ({
+    id,
+    name,
+    label,
+    description,
+    checked,
+    onChange,
+    theme,
+    disabled = false,
+    children,
+}: {
+    id: string;
+    name: string;
+    label: string;
+    description?: string;
+    checked: boolean;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    theme: ClassTheme;
+    disabled?: boolean;
+    children?: React.ReactNode;
+}) => {
+    const baseClasses = `relative flex flex-col p-4 border rounded-lg transition-all focus-within:ring-2 ${theme.focusWithinRing500} ${theme.focusWithinBorder500} ${disabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`;
+    const stateClasses = checked
+        ? `${theme.bgColor50} ${theme.border500} ring-2 ${theme.ring500}`
+        : disabled
+            ? 'bg-gray-50 border-gray-200 text-gray-400'
+            : `bg-white border-gray-300 ${theme.hoverBorder400}`;
+
+    const preventWhenDisabled = disabled
+        ? (event: React.MouseEvent<HTMLLabelElement>) => {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        : undefined;
+
+    const handleChildrenPointer = (event: React.SyntheticEvent) => {
+        event.stopPropagation();
+    };
+
+    return (
+        <label
+            htmlFor={id}
+            className={`${baseClasses} ${stateClasses}`}
+            aria-disabled={disabled}
+            onClick={preventWhenDisabled}
+            onMouseDown={preventWhenDisabled}
+        >
+            <div className="flex items-start">
+                <div className="flex items-center h-5">
+                    <input
+                        id={id}
+                        name={name}
+                        type="checkbox"
+                        checked={checked}
+                        onChange={onChange}
+                        disabled={disabled}
+                        className={`${theme.focusRing500} h-4 w-4 ${theme.text600} border-gray-300 rounded disabled:bg-gray-100 disabled:border-gray-200 disabled:cursor-not-allowed`}
+                    />
+                </div>
+                <div className="ml-3 text-sm">
+                    <span className={`font-medium ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>{label}</span>
+                    {description && <p className={disabled ? 'text-gray-400' : 'text-gray-500'}>{description}</p>}
+                </div>
+            </div>
+            {children && (
+                <div
+                    className="mt-3"
+                    onClick={handleChildrenPointer}
+                    onMouseDown={handleChildrenPointer}
+                    onPointerDown={handleChildrenPointer}
+                    onTouchStart={handleChildrenPointer}
+                >
+                    {children}
+                </div>
+            )}
+        </label>
+    );
+};
 
 const BookPreviewLink: React.FC<{ bookId: string | null; label: string; theme: ClassTheme }> = ({ bookId, label, theme }) => {
     if (!bookId) return null;
@@ -886,30 +955,33 @@ const QuestionnairePage: React.FC = () => {
                                     const isSelected = !!selection;
                                     const activeVariant = selection?.variant ?? null;
                                     return (
-                                        <div key={language} className="border rounded-lg p-4">
-                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                                <div>
-                                                    <p className="text-base font-semibold text-gray-800">{language}</p>
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-3">
-                                                    <button
-                                                        onClick={() => toggleLanguageSelection(language)}
-                                                        disabled={!isSelected && selectionLimitReached}
-                                                        className={`px-3 py-1.5 text-sm font-semibold rounded-md border transition-colors ${isSelected
-                                                            ? `${theme.bgColor600} text-white ${theme.border600}`
-                                                            : (!isSelected && selectionLimitReached)
-                                                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                                                : `bg-white ${theme.text600} ${theme.border600} ${theme.hoverBg50}`}`}
-                                                    >
-                                                        {isSelected ? 'Selected' : 'Select'}
-                                                    </button>
-
-                                                    {isSelected && classVariants.length > 0 && (
+                                        <CheckboxCard
+                                            key={language}
+                                            id={`language-${language}`}
+                                            name="languages"
+                                            label={language}
+                                            description={classVariants.length > 0 ? 'Requires choosing a variant after selecting.' : 'Variant selection not required.'}
+                                            checked={isSelected}
+                                            onChange={event => {
+                                                event.preventDefault();
+                                                toggleLanguageSelection(language);
+                                            }}
+                                            theme={theme}
+                                            disabled={!isSelected && selectionLimitReached}
+                                        >
+                                            {isSelected ? (
+                                                <>
+                                                    {classVariants.length > 0 ? (
                                                         <div className="flex flex-wrap gap-2">
                                                             {classVariants.map(variant => (
                                                                 <button
                                                                     key={variant}
-                                                                    onClick={() => handleVariantChange(language, variant)}
+                                                                    type="button"
+                                                                    onClick={event => {
+                                                                        event.preventDefault();
+                                                                        event.stopPropagation();
+                                                                        handleVariantChange(language, variant);
+                                                                    }}
                                                                     className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${activeVariant === variant
                                                                         ? `${theme.bgColor600} text-white ${theme.border600}`
                                                                         : 'bg-white hover:bg-gray-100'}`}
@@ -918,17 +990,19 @@ const QuestionnairePage: React.FC = () => {
                                                                 </button>
                                                             ))}
                                                         </div>
+                                                    ) : (
+                                                        <p className="text-sm text-gray-500">No variant selection required.</p>
                                                     )}
-                                                </div>
-                                            </div>
-
-                                            {isSelected && classVariants.length === 0 && (
-                                                <p className="text-sm text-gray-500 mt-2">No variant selection required.</p>
+                                                    {classVariants.length > 0 && !activeVariant && (
+                                                        <p className="text-xs text-red-600 mt-2">Select a variant to finalise this language.</p>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                !isSelected && selectionLimitReached && (
+                                                    <p className="text-xs text-gray-500">Selection limit reached. Deselect another language to choose this one.</p>
+                                                )
                                             )}
-                                            {isSelected && classVariants.length > 0 && !activeVariant && (
-                                                <p className="text-xs text-red-600 mt-2">Select a variant to finalise this language.</p>
-                                            )}
-                                        </div>
+                                        </CheckboxCard>
                                     );
                                 })}
                             </div>
