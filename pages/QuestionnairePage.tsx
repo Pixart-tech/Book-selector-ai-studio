@@ -608,7 +608,7 @@ const QuestionnairePage: React.FC = () => {
         | { type: 'core'; subject: 'EVS' | 'Rhymes & Stories' | 'Art & Craft' }
         | { type: 'language'; index: number };
 
-    const handleRemoveSelection = (className: ClassLevel, action: SummaryAction) => {
+    const handleRemoveSelection = useCallback((className: ClassLevel, action: SummaryAction) => {
         updateClassAnswers(className, current => {
             switch (action.type) {
                 case 'englishSkill':
@@ -666,12 +666,12 @@ const QuestionnairePage: React.FC = () => {
                     return current;
             }
         });
-    };
+    }, [updateClassAnswers]);
 
 
 
 
-    const buildSummaryItems = (className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
+    const buildSummaryItems = useCallback((className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
         const englishSkillReady = isEnglishSkillReady(classAnswers);
         const englishWorkbookReady = isEnglishWorkbookReady(classAnswers);
         const mathSkillReady = isMathSkillReady(classAnswers);
@@ -810,7 +810,15 @@ const QuestionnairePage: React.FC = () => {
         }
 
         return summaryItems;
-    };
+    }, [handleRemoveSelection]);
+
+    const liveSummaryItems = useMemo(() => {
+        if (!showClassIntro && !showFinalSummary) {
+            return buildSummaryItems(currentClass, answers, bookIds);
+        }
+
+        return [];
+    }, [showClassIntro, showFinalSummary, currentClass, answers, bookIds, buildSummaryItems]);
 
     
     
@@ -1486,7 +1494,69 @@ const QuestionnairePage: React.FC = () => {
             {status === 'error' && <p className="mt-6 text-center text-red-600">Failed to save selection. Please try again.</p>}
         </div>
     );
-    
+
+    const renderLiveSummary = () => {
+        if (showClassIntro || showFinalSummary) {
+            return null;
+        }
+
+        const summaryTheme = CLASS_THEME[currentClass];
+
+        return (
+            <aside className="hidden lg:block">
+                <div className="lg:sticky lg:top-6 bg-white p-6 rounded-lg border shadow-md">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800">Current Selections</h2>
+                        <p className="text-sm text-gray-600 mt-1">Review your picks and make quick edits.</p>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        {liveSummaryItems.length > 0 ? (
+                            <div className="divide-y divide-gray-200">
+                                {liveSummaryItems.map(item => (
+                                    <div key={item.key} className="py-3">
+                                        <div className="flex flex-col gap-2">
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                                                <p className="text-sm text-gray-600">{item.value}</p>
+                                                {item.bookLabel && (
+                                                    <div className="mt-1">
+                                                        <BookPreviewLink
+                                                            bookId={item.bookId || null}
+                                                            label={item.bookLabel}
+                                                            theme={summaryTheme}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 justify-start">
+                                                <button
+                                                    onClick={() => navigateToStep(currentClassIndex, item.step, { fromSummary: 'class' })}
+                                                    className={`text-sm font-semibold ${summaryTheme.text600} ${summaryTheme.hoverText800} px-3 py-1 rounded-md ${summaryTheme.hoverBg100}`}
+                                                >
+                                                    Edit
+                                                </button>
+                                                {item.canRemove && item.onRemove && (
+                                                    <button
+                                                        onClick={item.onRemove}
+                                                        className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-600">Selections will appear here as you make them.</p>
+                        )}
+                    </div>
+                </div>
+            </aside>
+        );
+    };
+
     const mainHeading = showFinalSummary
         ? 'All Classes : Curriculum Customiser'
         : showClassIntro
@@ -1494,67 +1564,82 @@ const QuestionnairePage: React.FC = () => {
             : `${currentClass} : Curriculum Customiser`;
 
     // --- MAIN RENDER ---
-    return (<div className="container mx-auto max-w-4xl">
-      <div className="bg-white p-8 rounded-lg shadow-md border">
-        <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-                <div>
-                    {!showClassIntro && (
-                        <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
-                    )}
-                </div>
-                {!showFinalSummary && !showClassIntro && (
-                    <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
-                )}
-            </div>
-            {!showFinalSummary && !showClassIntro && <>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
-                </div>
-                <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
-                    <span>Books selected: {booksSelected}</span>
-                    {currentClass !== 'Nursery' && (
-                        <>
-                            <span className="mx-2">•</span>
-                            <span>Languages selected: {progress.languagesSelected}</span>
-                        </>
-                    )}
-                </div>
-            </>}
-        </div>
-        
-        <div className="min-h-[400px] py-4">
-            {showFinalSummary ? renderFinalSummary() : (showClassIntro ? renderClassSelection() : renderStepContent())}
-        </div>
+    return (
+        <div className="container mx-auto max-w-6xl px-4 lg:px-0">
+            <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+                <div className="bg-white p-8 rounded-lg shadow-md border">
+                    <div className="mb-6">
+                        <div className="flex justify-between items-center mb-2">
+                            <div>
+                                {!showClassIntro && (
+                                    <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
+                                )}
+                            </div>
+                            {!showFinalSummary && !showClassIntro && (
+                                <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
+                            )}
+                        </div>
+                        {!showFinalSummary && !showClassIntro && (
+                            <>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
+                                </div>
+                                <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
+                                    <span>Books selected: {booksSelected}</span>
+                                    {currentClass !== 'Nursery' && (
+                                        <>
+                                            <span className="mx-2">•</span>
+                                            <span>Languages selected: {progress.languagesSelected}</span>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
 
-        <div className="mt-8 flex justify-between items-center">
-          <button onClick={handleBack} disabled={showClassIntro} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
-            Back
-          </button>
-          <div className="flex gap-3">
-            {summaryReturnTarget === 'final' && !showFinalSummary && (
-              <button
-                onClick={returnToSummary}
-                className={`border ${theme.border600} ${theme.text600} px-6 py-2 rounded-md ${theme.hoverBg50}`}
-              >
-                Return to Final Summary
-              </button>
-            )}
-            {!showFinalSummary && (
-              <button onClick={handleNext} disabled={showClassIntro} className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700} disabled:bg-gray-300 disabled:text-gray-500`}>
-                {step === totalStepsPerClass
-                    ? (summaryReturnTarget
-                        ? 'Next'
-                        : (currentClass === 'UKG'
-                            ? 'Finish & View Summary'
-                            : `Next: Customise ${classOrder[currentClassIndex+1]}`))
-                    : 'Next'}
-              </button>
-            )}
-          </div>
+                    <div className="min-h-[400px] py-4">
+                        {showFinalSummary ? renderFinalSummary() : (showClassIntro ? renderClassSelection() : renderStepContent())}
+                    </div>
+
+                    <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+                        <button
+                            onClick={handleBack}
+                            disabled={showClassIntro}
+                            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                        >
+                            Back
+                        </button>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            {summaryReturnTarget === 'final' && !showFinalSummary && (
+                                <button
+                                    onClick={returnToSummary}
+                                    className={`border ${theme.border600} ${theme.text600} px-6 py-2 rounded-md ${theme.hoverBg50}`}
+                                >
+                                    Return to Final Summary
+                                </button>
+                            )}
+                            {!showFinalSummary && (
+                                <button
+                                    onClick={handleNext}
+                                    disabled={showClassIntro}
+                                    className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700} disabled:bg-gray-300 disabled:text-gray-500`}
+                                >
+                                    {step === totalStepsPerClass
+                                        ? (summaryReturnTarget
+                                            ? 'Next'
+                                            : (currentClass === 'UKG'
+                                                ? 'Finish & View Summary'
+                                                : `Next: Customise ${classOrder[currentClassIndex + 1]}`))
+                                        : 'Next'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                {renderLiveSummary()}
+            </div>
         </div>
-      </div>
-    </div>);
+    );
 };
 
 export default QuestionnairePage;
