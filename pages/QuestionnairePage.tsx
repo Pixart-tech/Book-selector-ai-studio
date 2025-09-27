@@ -1449,8 +1449,22 @@ const QuestionnairePage: React.FC = () => {
                         art: classAnswers.includeArt ? getBookId('Art & Craft', classAnswers) : null,
                     };
 
-                    const summaryItems = buildSummaryItems(className, classAnswers, classBookIds, true);
+                    const includeCoreSubjects = !!coreSubjectsReached[className];
+                    const summaryItems = buildSummaryItems(className, classAnswers, classBookIds, includeCoreSubjects);
                     const summaryTheme = CLASS_THEME[className];
+                    if (summaryItems.length === 0) {
+                        return (
+                            <div key={className} className="bg-gray-50 border rounded-lg p-4">
+                                <div className="flex justify-between items-center">
+                                    <h3 className={`font-bold text-lg ${summaryTheme.text700}`}>{className}</h3>
+                                    <button onClick={() => handleEditClass(index)} className={`text-sm font-semibold ${summaryTheme.text600} ${summaryTheme.hoverText800} px-3 py-1 rounded-md ${summaryTheme.hoverBg100}`}>
+                                        Edit
+                                    </button>
+                                </div>
+                                <p className="mt-3 text-sm text-gray-600">No selections yet.</p>
+                            </div>
+                        );
+                    }
                     return (
                         <div key={className} className="bg-gray-50 border rounded-lg p-4">
                             <div className="flex justify-between items-center">
