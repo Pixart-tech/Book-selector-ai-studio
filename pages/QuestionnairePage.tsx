@@ -1517,12 +1517,12 @@ const QuestionnairePage: React.FC = () => {
                                     <div key={item.key} className="py-3">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <span
-                                                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${summaryTheme.bgColor50} ${summaryTheme.text600}`}
+                                                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold text-white ${summaryTheme.bgColor600}`}
                                             >
                                                 {item.label}
                                             </span>
                                             <div className="flex-1 min-w-0">
-                                                <span className="block text-sm text-gray-600 truncate max-w-full text-right">
+                                                <span className="block text-sm text-gray-700 truncate max-w-full">
                                                     {item.value}
                                                 </span>
                                             </div>
