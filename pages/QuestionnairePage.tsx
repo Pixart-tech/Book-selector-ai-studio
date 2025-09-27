@@ -671,7 +671,7 @@ const QuestionnairePage: React.FC = () => {
 
 
 
-    const buildSummaryItems = useCallback((className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds): SummaryItem[] => {
+    const buildSummaryItems = useCallback((className: ClassLevel, classAnswers: QuestionnaireAnswers, classBookIds: SummaryBookIds, includeCoreSubjects: boolean): SummaryItem[] => {
         const englishSkillReady = isEnglishSkillReady(classAnswers);
         const englishWorkbookReady = isEnglishWorkbookReady(classAnswers);
         const mathSkillReady = isMathSkillReady(classAnswers);
@@ -744,7 +744,7 @@ const QuestionnairePage: React.FC = () => {
             });
         }
 
-        if (classAnswers.includeEVS) {
+        if (includeCoreSubjects && classAnswers.includeEVS) {
             summaryItems.push({
                 key: 'core-evs',
                 label: 'EVS',
@@ -757,7 +757,7 @@ const QuestionnairePage: React.FC = () => {
             });
         }
 
-        if (classAnswers.includeRhymes) {
+        if (includeCoreSubjects && classAnswers.includeRhymes) {
             summaryItems.push({
                 key: 'core-rhymes',
                 label: 'Rhymes & Stories',
@@ -770,7 +770,7 @@ const QuestionnairePage: React.FC = () => {
             });
         }
 
-        if (classAnswers.includeArt) {
+        if (includeCoreSubjects && classAnswers.includeArt) {
             summaryItems.push({
                 key: 'core-art',
                 label: 'Art & Craft',
@@ -814,11 +814,12 @@ const QuestionnairePage: React.FC = () => {
 
     const liveSummaryItems = useMemo(() => {
         if (!showClassIntro && !showFinalSummary) {
-            return buildSummaryItems(currentClass, answers, bookIds);
+            const includeCore = coreSubjectsReached[currentClass] || showFinalSummary;
+            return buildSummaryItems(currentClass, answers, bookIds, includeCore);
         }
 
         return [];
-    }, [showClassIntro, showFinalSummary, currentClass, answers, bookIds, buildSummaryItems]);
+    }, [showClassIntro, showFinalSummary, currentClass, answers, bookIds, buildSummaryItems, coreSubjectsReached]);
 
     
     
@@ -1402,7 +1403,7 @@ const QuestionnairePage: React.FC = () => {
                 </div>);
             }
             case 6: // Class Summary
-                const summaryItems = buildSummaryItems(currentClass, answers, bookIds);
+                const summaryItems = buildSummaryItems(currentClass, answers, bookIds, true);
                 return (<div>
                     <h2 className="text-xl font-semibold mb-2">{currentClass} Selection Summary</h2>
                     <p className="text-gray-600 mb-4">Review your selections for this class. Click "Next" to proceed.</p>
@@ -1448,7 +1449,7 @@ const QuestionnairePage: React.FC = () => {
                         art: classAnswers.includeArt ? getBookId('Art & Craft', classAnswers) : null,
                     };
 
-                    const summaryItems = buildSummaryItems(className, classAnswers, classBookIds);
+                    const summaryItems = buildSummaryItems(className, classAnswers, classBookIds, true);
                     const summaryTheme = CLASS_THEME[className];
                     return (
                         <div key={className} className="bg-gray-50 border rounded-lg p-4">
