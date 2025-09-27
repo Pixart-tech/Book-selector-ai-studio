@@ -1497,7 +1497,7 @@ const QuestionnairePage: React.FC = () => {
     );
 
     const renderLiveSummary = () => {
-        if (showClassIntro || showFinalSummary) {
+        if (showClassIntro || showFinalSummary || step === totalStepsPerClass) {
             return null;
         }
 
