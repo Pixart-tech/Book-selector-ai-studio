@@ -1507,7 +1507,7 @@ const QuestionnairePage: React.FC = () => {
                 <div className="lg:sticky lg:top-6 bg-white p-6 rounded-lg border shadow-md">
                     <div>
                         <h2 className="text-lg font-semibold text-gray-800">Current Selections</h2>
-                        <p className="text-sm text-gray-600 mt-1">Review your picks and make quick edits.</p>
+                        <p className="text-sm text-gray-600 mt-1">A quick overview of what’s been chosen so far.</p>
                     </div>
                     <div className="mt-4 space-y-2">
                         {liveSummaryItems.length > 0 ? (
@@ -1526,22 +1526,6 @@ const QuestionnairePage: React.FC = () => {
                                                             theme={summaryTheme}
                                                         />
                                                     </div>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-wrap gap-2 justify-start">
-                                                <button
-                                                    onClick={() => navigateToStep(currentClassIndex, item.step, { fromSummary: 'class' })}
-                                                    className={`text-sm font-semibold ${summaryTheme.text600} ${summaryTheme.hoverText800} px-3 py-1 rounded-md ${summaryTheme.hoverBg100}`}
-                                                >
-                                                    Edit
-                                                </button>
-                                                {item.canRemove && item.onRemove && (
-                                                    <button
-                                                        onClick={item.onRemove}
-                                                        className="text-sm font-semibold text-red-600 hover:text-red-800 px-3 py-1 rounded-md hover:bg-red-100"
-                                                    >
-                                                        Remove
-                                                    </button>
                                                 )}
                                             </div>
                                         </div>
