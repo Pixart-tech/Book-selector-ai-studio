@@ -1515,20 +1515,9 @@ const QuestionnairePage: React.FC = () => {
                             <div className="divide-y divide-gray-200">
                                 {liveSummaryItems.map(item => (
                                     <div key={item.key} className="py-3">
-                                        <div className="flex flex-col gap-2">
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-                                                <p className="text-sm text-gray-600">{item.value}</p>
-                                                {item.bookLabel && (
-                                                    <div className="mt-1">
-                                                        <BookPreviewLink
-                                                            bookId={item.bookId || null}
-                                                            label={item.bookLabel}
-                                                            theme={summaryTheme}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                                            <p className="text-sm text-gray-600">{item.value}</p>
                                         </div>
                                     </div>
                                 ))}
