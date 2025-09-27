@@ -844,10 +844,10 @@ const QuestionnairePage: React.FC = () => {
     const renderClassSelection = () => (
         <div className="flex flex-col items-center gap-10 text-center">
             <div className="space-y-4 max-w-2xl">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">
                     Design your perfect early years curriculum
-                </h2>
-                <p className="text-lg text-gray-600">
+                </h1>
+                <p className="text-xl text-gray-700">
                     Choose a class level to personalise English, Math, assessments, and enrichment books tailored to your students.
                 </p>
             </div>
@@ -1499,7 +1499,9 @@ const QuestionnairePage: React.FC = () => {
         <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
+                    {!showClassIntro && (
+                        <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
+                    )}
                 </div>
                 {!showFinalSummary && !showClassIntro && (
                     <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
