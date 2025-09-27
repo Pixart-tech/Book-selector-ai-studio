@@ -1526,7 +1526,7 @@ const QuestionnairePage: React.FC = () => {
         </div>
 
         <div className="mt-8 flex justify-between items-center">
-          <button onClick={handleBack} disabled={showClassIntro || (currentClassIndex === 0 && step === 1 && !showFinalSummary)} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
+          <button onClick={handleBack} disabled={showClassIntro} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
             Back
           </button>
           <div className="flex gap-3">
