@@ -854,7 +854,7 @@ const QuestionnairePage: React.FC = () => {
         <div className="flex flex-col items-center gap-10 text-center">
             <div className="space-y-4 max-w-2xl">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-                    Design your perfect early years curriculum
+                    Customise your perfect early curriculum
                 </h1>
                 <p className="text-xl text-gray-700">
                     Choose a class level to personalise English, Math, assessments, and enrichment books tailored to your students.
@@ -1548,81 +1548,93 @@ const QuestionnairePage: React.FC = () => {
             ? 'Welcome to the Curriculum Customiser'
             : `${currentClass} : Curriculum Customiser`;
 
+    const mainContentCard = (
+        <div className="bg-white p-8 rounded-lg shadow-md border">
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                    <div>
+                        {!showClassIntro && (
+                            <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
+                        )}
+                    </div>
+                    {!showFinalSummary && !showClassIntro && (
+                        <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
+                    )}
+                </div>
+                {!showFinalSummary && !showClassIntro && (
+                    <>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
+                        </div>
+                        <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
+                            <span>Books selected: {booksSelected}</span>
+                            {currentClass !== 'Nursery' && (
+                                <>
+                                    <span className="mx-2">•</span>
+                                    <span>Languages selected: {progress.languagesSelected}</span>
+                                </>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            <div className="min-h-[400px] py-4">
+                {showFinalSummary ? renderFinalSummary() : (showClassIntro ? renderClassSelection() : renderStepContent())}
+            </div>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+                <button
+                    onClick={handleBack}
+                    disabled={showClassIntro}
+                    className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                >
+                    Back
+                </button>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    {summaryReturnTarget === 'final' && !showFinalSummary && (
+                        <button
+                            onClick={returnToSummary}
+                            className={`border ${theme.border600} ${theme.text600} px-6 py-2 rounded-md ${theme.hoverBg50}`}
+                        >
+                            Return to Final Summary
+                        </button>
+                    )}
+                    {!showFinalSummary && (
+                        <button
+                            onClick={handleNext}
+                            disabled={showClassIntro}
+                            className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700} disabled:bg-gray-300 disabled:text-gray-500`}
+                        >
+                            {step === totalStepsPerClass
+                                ? (summaryReturnTarget
+                                    ? 'Next'
+                                    : (currentClass === 'UKG'
+                                        ? 'Finish & View Summary'
+                                        : `Next: Customise ${classOrder[currentClassIndex + 1]}`))
+                                : 'Next'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     // --- MAIN RENDER ---
     return (
         <div className="container mx-auto max-w-6xl px-4 lg:px-0">
-            <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-                <div className="bg-white p-8 rounded-lg shadow-md border">
-                    <div className="mb-6">
-                        <div className="flex justify-between items-center mb-2">
-                            <div>
-                                {!showClassIntro && (
-                                    <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
-                                )}
-                            </div>
-                            {!showFinalSummary && !showClassIntro && (
-                                <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
-                            )}
-                        </div>
-                        {!showFinalSummary && !showClassIntro && (
-                            <>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
-                                </div>
-                                <div className={`mt-3 text-sm font-semibold ${theme.text700}`}>
-                                    <span>Books selected: {booksSelected}</span>
-                                    {currentClass !== 'Nursery' && (
-                                        <>
-                                            <span className="mx-2">•</span>
-                                            <span>Languages selected: {progress.languagesSelected}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="min-h-[400px] py-4">
-                        {showFinalSummary ? renderFinalSummary() : (showClassIntro ? renderClassSelection() : renderStepContent())}
-                    </div>
-
-                    <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-                        <button
-                            onClick={handleBack}
-                            disabled={showClassIntro}
-                            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                        >
-                            Back
-                        </button>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            {summaryReturnTarget === 'final' && !showFinalSummary && (
-                                <button
-                                    onClick={returnToSummary}
-                                    className={`border ${theme.border600} ${theme.text600} px-6 py-2 rounded-md ${theme.hoverBg50}`}
-                                >
-                                    Return to Final Summary
-                                </button>
-                            )}
-                            {!showFinalSummary && (
-                                <button
-                                    onClick={handleNext}
-                                    disabled={showClassIntro}
-                                    className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700} disabled:bg-gray-300 disabled:text-gray-500`}
-                                >
-                                    {step === totalStepsPerClass
-                                        ? (summaryReturnTarget
-                                            ? 'Next'
-                                            : (currentClass === 'UKG'
-                                                ? 'Finish & View Summary'
-                                                : `Next: Customise ${classOrder[currentClassIndex + 1]}`))
-                                        : 'Next'}
-                                </button>
-                            )}
-                        </div>
+            {showClassIntro ? (
+                <div className="flex justify-center">
+                    <div className="w-full max-w-4xl">
+                        {mainContentCard}
                     </div>
                 </div>
-                {renderLiveSummary()}
-            </div>
+            ) : (
+                <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+                    {mainContentCard}
+                    {renderLiveSummary()}
+                </div>
+            )}
         </div>
     );
 };
