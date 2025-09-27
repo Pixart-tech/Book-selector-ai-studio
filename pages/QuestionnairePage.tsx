@@ -325,6 +325,7 @@ const QuestionnairePage: React.FC = () => {
     const classOrder: ClassLevel[] = ['Nursery', 'LKG', 'UKG'];
     const [currentClassIndex, setCurrentClassIndex] = useState(0);
     const [step, setStep] = useState(1);
+    const [showClassIntro, setShowClassIntro] = useState(true);
     const [showFinalSummary, setShowFinalSummary] = useState(false);
     const [summaryReturnTarget, setSummaryReturnTarget] = useState<null | 'class' | 'final'>(null);
     const [coreSubjectsReached, setCoreSubjectsReached] = useState<Record<ClassLevel, boolean>>({
@@ -389,7 +390,7 @@ const QuestionnairePage: React.FC = () => {
         setSummaryReturnTarget(null);
     }, [summaryReturnTarget, totalStepsPerClass]);
     const handleNext = () => {
-        if (showFinalSummary) return;
+        if (showClassIntro || showFinalSummary) return;
 
         const isNurseryLangStep = currentClass === 'Nursery' && step === 4; // Step before languages
         if (isNurseryLangStep) {
@@ -423,6 +424,9 @@ const QuestionnairePage: React.FC = () => {
 
     const handleBack = () => {
         setStatus('idle');
+        if (showClassIntro) {
+            return;
+        }
         if (showFinalSummary) {
             setShowFinalSummary(false);
             return;
@@ -442,10 +446,8 @@ const QuestionnairePage: React.FC = () => {
         if (step > 1) {
             setStep(step - 1);
         } else {
-            if (currentClassIndex > 0) {
-                setCurrentClassIndex(currentClassIndex - 1);
-                setStep(totalStepsPerClass);
-            }
+            setShowClassIntro(true);
+            setSummaryReturnTarget(null);
         }
     };
 
@@ -456,6 +458,7 @@ const QuestionnairePage: React.FC = () => {
         setStep(targetStep);
         setSummaryReturnTarget(options.fromSummary ?? null);
         setShowFinalSummary(false);
+        setShowClassIntro(false);
     };
 
     const handleEditClass = (classIndex: number) => {
@@ -813,6 +816,73 @@ const QuestionnairePage: React.FC = () => {
     
     
     // --- RENDER METHODS ---
+    const classHighlights: Record<ClassLevel, { title: string; description: string }> = {
+        Nursery: {
+            title: 'Nursery',
+            description: 'Build foundational literacy and numeracy habits with playful, hands-on work.',
+        },
+        LKG: {
+            title: 'LKG',
+            description: 'Strengthen letter formations, number sense, and classroom readiness with structured practice.',
+        },
+        UKG: {
+            title: 'UKG',
+            description: 'Prepare learners for Grade 1 with confident reading, writing, and problem-solving skills.',
+        },
+    };
+
+    const handleClassSelection = (index: number) => {
+        setStatus('idle');
+        setSavedId(null);
+        setCurrentClassIndex(index);
+        setStep(1);
+        setShowClassIntro(false);
+        setShowFinalSummary(false);
+        setSummaryReturnTarget(null);
+    };
+
+    const renderClassSelection = () => (
+        <div className="flex flex-col items-center gap-10 text-center">
+            <div className="space-y-4 max-w-2xl">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
+                    Design your perfect early years curriculum
+                </h2>
+                <p className="text-lg text-gray-600">
+                    Choose a class level to personalise English, Math, assessments, and enrichment books tailored to your students.
+                </p>
+            </div>
+            <div className="grid w-full gap-6 md:grid-cols-3">
+                {classOrder.map((level, index) => {
+                    const cardTheme = CLASS_THEME[level];
+                    return (
+                        <button
+                            key={level}
+                            type="button"
+                            onClick={() => handleClassSelection(index)}
+                            className={`group relative overflow-hidden rounded-xl border ${cardTheme.border200} bg-white p-6 text-left shadow-sm transition-all duration-200 focus:outline-none ${cardTheme.focusRing500} focus:ring-2 hover:-translate-y-1 ${cardTheme.hoverBg50}`}
+                        >
+                            <div className={`absolute inset-x-0 top-0 h-1 ${cardTheme.bgColor600}`} aria-hidden="true"></div>
+                            <div className="space-y-3">
+                                <h3 className={`text-2xl font-bold text-gray-900 ${cardTheme.text700}`}>
+                                    {classHighlights[level].title}
+                                </h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    {classHighlights[level].description}
+                                </p>
+                                <span className={`inline-flex items-center text-sm font-semibold ${cardTheme.text600} ${cardTheme.hoverText800}`}>
+                                    Start customising
+                                    <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+
     const renderStepContent = () => {
         // Step definitions: 1: English, 2: Math, 3: Assessment, 4: Core, 5: Languages, 6: Class Summary
         switch (step) {
@@ -1419,7 +1489,9 @@ const QuestionnairePage: React.FC = () => {
     
     const mainHeading = showFinalSummary
         ? 'All Classes : Curriculum Customiser'
-        : `${currentClass} : Curriculum Customiser`;
+        : showClassIntro
+            ? 'Welcome to the Curriculum Customiser'
+            : `${currentClass} : Curriculum Customiser`;
 
     // --- MAIN RENDER ---
     return (<div className="container mx-auto max-w-4xl">
@@ -1429,9 +1501,11 @@ const QuestionnairePage: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">{mainHeading}</h1>
                 </div>
-                {!showFinalSummary && <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>}
+                {!showFinalSummary && !showClassIntro && (
+                    <span className="text-sm font-semibold text-gray-500">Step {step} of {totalStepsPerClass}</span>
+                )}
             </div>
-            {!showFinalSummary && <>
+            {!showFinalSummary && !showClassIntro && <>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div className={`${theme.bgColor600} h-2.5 rounded-full`} style={{ width: `${(step / totalStepsPerClass) * 100}%` }}></div>
                 </div>
@@ -1448,11 +1522,11 @@ const QuestionnairePage: React.FC = () => {
         </div>
         
         <div className="min-h-[400px] py-4">
-            {showFinalSummary ? renderFinalSummary() : renderStepContent()}
+            {showFinalSummary ? renderFinalSummary() : (showClassIntro ? renderClassSelection() : renderStepContent())}
         </div>
 
         <div className="mt-8 flex justify-between items-center">
-          <button onClick={handleBack} disabled={currentClassIndex === 0 && step === 1 && !showFinalSummary} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
+          <button onClick={handleBack} disabled={showClassIntro || (currentClassIndex === 0 && step === 1 && !showFinalSummary)} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed">
             Back
           </button>
           <div className="flex gap-3">
@@ -1465,7 +1539,7 @@ const QuestionnairePage: React.FC = () => {
               </button>
             )}
             {!showFinalSummary && (
-              <button onClick={handleNext} className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700}`}>
+              <button onClick={handleNext} disabled={showClassIntro} className={`${theme.bgColor600} text-white px-6 py-2 rounded-md ${theme.hoverBg700} disabled:bg-gray-300 disabled:text-gray-500`}>
                 {step === totalStepsPerClass
                     ? (summaryReturnTarget
                         ? 'Next'
