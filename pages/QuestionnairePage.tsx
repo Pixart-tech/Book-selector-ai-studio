@@ -108,15 +108,11 @@ const formatEnglishSkillSummary = (answers: QuestionnaireAnswers): string => {
         : answers.englishSkill;
 };
 
-const getEnglishWorkbookSummary = (answers: QuestionnaireAnswers): string => {
-    if (!answers.englishSkill) return 'Not selected';
+const getEnglishWorkbookVariant = (answers: QuestionnaireAnswers): string | null => {
+    if (!answers.englishSkill) return null;
 
     if (answers.classLevel === 'UKG' || answers.englishSkill === 'Jolly Phonics') {
         return answers.englishSkill;
-    }
-
-    if (answers.englishWorkbookAssist === null) {
-        return 'Writing Assist not selected';
     }
 
     let skillVariant = answers.englishSkill;
@@ -126,27 +122,29 @@ const getEnglishWorkbookSummary = (answers: QuestionnaireAnswers): string => {
         skillVariant = `${answers.englishSkill} (${answers.englishSkillWritingFocus})`;
     }
 
-    const assistText = answers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
     if (!skillVariant.includes('(')) {
-        return `${skillVariant} (${assistText})`;
+        return `${skillVariant} (Normal)`;
     }
 
-    return `${skillVariant.slice(0, -1)}, ${assistText})`;
+    return `${skillVariant.slice(0, -1)}, Normal)`;
 };
 
-const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
-    if (!answers.mathSkill) return 'Not selected';
+const getEnglishWorkbookSummary = (answers: QuestionnaireAnswers): string => {
+    return getEnglishWorkbookVariant(answers) ?? 'Not selected';
+};
+
+const getMathWorkbookVariant = (answers: QuestionnaireAnswers): string | null => {
+    if (!answers.mathSkill) return null;
 
     if (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG') {
-        if (answers.mathWorkbookAssist === null) {
-            return 'Writing Assist not selected';
-        }
-
-        const assistText = answers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
-        return `${answers.mathSkill} (${assistText})`;
+        return `${answers.mathSkill} (Normal)`;
     }
 
     return answers.mathSkill;
+};
+
+const getMathWorkbookSummary = (answers: QuestionnaireAnswers): string => {
+    return getMathWorkbookVariant(answers) ?? 'Not selected';
 };
 
 const isEnglishSkillReady = (answers: QuestionnaireAnswers): boolean => {
@@ -160,11 +158,7 @@ const isEnglishWorkbookReady = (answers: QuestionnaireAnswers): boolean => {
     if (!answers.includeEnglishWorkbook) return false;
     if (!isEnglishSkillReady(answers)) return false;
 
-    const requiresAssist = (answers.classLevel === 'Nursery' || answers.classLevel === 'LKG')
-        && !!answers.englishSkill
-        && answers.englishSkill !== 'Jolly Phonics';
-
-    return !requiresAssist || answers.englishWorkbookAssist !== null;
+    return getEnglishWorkbookVariant(answers) !== null;
 };
 
 const isMathSkillReady = (answers: QuestionnaireAnswers): boolean => !!answers.mathSkill;
@@ -173,9 +167,7 @@ const isMathWorkbookReady = (answers: QuestionnaireAnswers): boolean => {
     if (!answers.includeMathWorkbook) return false;
     if (!isMathSkillReady(answers)) return false;
 
-    const requiresAssist = answers.classLevel === 'Nursery' || answers.classLevel === 'LKG';
-
-    return !requiresAssist || answers.mathWorkbookAssist !== null;
+    return getMathWorkbookVariant(answers) !== null;
 };
 
 // --- UI COMPONENTS ---
@@ -338,9 +330,7 @@ const QuestionnairePage: React.FC = () => {
         classLevel: null,
         englishSkill: null,
         englishSkillWritingFocus: null,
-        englishWorkbookAssist: null,
         includeEnglishWorkbook: true,
-        mathWorkbookAssist: null,
         mathSkill: null,
         includeMathWorkbook: true,
         assessment: null,
@@ -532,45 +522,19 @@ const QuestionnairePage: React.FC = () => {
                     return b.variant === expectedVariant;
 
                 case 'English Workbook': {
-                    if (!sourceAnswers.englishSkill) return false;
+                    const workbookVariant = getEnglishWorkbookVariant(sourceAnswers);
+                    if (!workbookVariant) return false;
 
-                    if (sourceAnswers.classLevel === 'UKG' || sourceAnswers.englishSkill === 'Jolly Phonics') {
-                        return b.variant === sourceAnswers.englishSkill;
-                    }
-
-                    if (sourceAnswers.englishWorkbookAssist === null) return false;
-                    const assistText = sourceAnswers.englishWorkbookAssist ? 'Writing Assist' : 'Normal';
-
-                    let skillVariant = '';
-                    if (sourceAnswers.englishSkill === 'LTI') {
-                        skillVariant = 'LTI (Caps)';
-                    } else if (sourceAnswers.englishSkillWritingFocus) {
-                        skillVariant = `${sourceAnswers.englishSkill} (${sourceAnswers.englishSkillWritingFocus})`;
-                    } else {
-                        skillVariant = sourceAnswers.englishSkill;
-                    }
-
-                    if (!skillVariant.includes('(')) {
-                        expectedVariant = `${skillVariant} (${assistText})`;
-                    } else {
-                        expectedVariant = `${skillVariant.slice(0, -1)}, ${assistText})`;
-                    }
-                    return b.variant === expectedVariant;
+                    return b.variant === workbookVariant;
                 }
 
                 case 'Math Skill':
                     return b.variant === sourceAnswers.mathSkill;
                 case 'Math Workbook': {
-                    if (!sourceAnswers.mathSkill) return false;
+                    const workbookVariant = getMathWorkbookVariant(sourceAnswers);
+                    if (!workbookVariant) return false;
 
-                    if (sourceAnswers.classLevel === 'Nursery' || sourceAnswers.classLevel === 'LKG') {
-                        if (sourceAnswers.mathWorkbookAssist === null) return false;
-                        const assistText = sourceAnswers.mathWorkbookAssist ? 'Writing Assist' : 'Normal';
-                        expectedVariant = `${sourceAnswers.mathSkill} (${assistText})`;
-                        return b.variant === expectedVariant;
-                    }
-
-                    return b.variant === sourceAnswers.mathSkill;
+                    return b.variant === workbookVariant;
                 }
 
                 case 'Assessment':
@@ -616,27 +580,23 @@ const QuestionnairePage: React.FC = () => {
                         ...current,
                         englishSkill: null,
                         englishSkillWritingFocus: null,
-                        englishWorkbookAssist: null,
                         includeEnglishWorkbook: true,
                     };
                 case 'englishWorkbook':
                     return {
                         ...current,
                         includeEnglishWorkbook: false,
-                        englishWorkbookAssist: null,
                     };
                 case 'mathSkill':
                     return {
                         ...current,
                         mathSkill: null,
-                        mathWorkbookAssist: null,
                         includeMathWorkbook: true,
                     };
                 case 'mathWorkbook':
                     return {
                         ...current,
                         includeMathWorkbook: false,
-                        mathWorkbookAssist: null,
                     };
                 case 'assessment':
                     return {
@@ -897,11 +857,6 @@ const QuestionnairePage: React.FC = () => {
         switch (step) {
             case 1: // English
                 const showWritingFocus = currentClass === 'Nursery' && (answers.englishSkill === 'ABCD' || answers.englishSkill === 'SATPIN');
-                const shouldAskForAssist = (currentClass === 'Nursery' || currentClass === 'LKG')
-                    && !!answers.englishSkill
-                    && answers.englishSkill !== 'Jolly Phonics'
-                    && answers.includeEnglishWorkbook;
-
                 const isEnglishSkillReadyForPreview = isEnglishSkillReady(answers);
                 const showWorkbookPreview = answers.includeEnglishWorkbook
                     && isEnglishWorkbookReady(answers);
@@ -912,7 +867,6 @@ const QuestionnairePage: React.FC = () => {
                     }
                     setAnswers({
                         englishSkill: skill,
-                        englishWorkbookAssist: null,
                         englishSkillWritingFocus: null,
                         includeEnglishWorkbook: true,
                     });
@@ -925,19 +879,12 @@ const QuestionnairePage: React.FC = () => {
                     setAnswers({
                         englishSkill: null,
                         englishSkillWritingFocus: null,
-                        englishWorkbookAssist: null,
                     });
                 };
 
                 const handleWritingFocusChange = (focus: 'Caps' | 'Small' | 'Caps & Small') => {
                     setAnswers({
                         englishSkillWritingFocus: answers.englishSkillWritingFocus === focus ? null : focus,
-                    });
-                };
-
-                const handleEnglishWorkbookAssistChange = (value: boolean) => {
-                    setAnswers({
-                        englishWorkbookAssist: answers.englishWorkbookAssist === value ? null : value,
                     });
                 };
 
@@ -1016,52 +963,24 @@ const QuestionnairePage: React.FC = () => {
                     </section>
                     <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
                         <div className="flex flex-col gap-2">
-                            <h2 className="text-xl font-semibold text-gray-800">Writing Assist?</h2>
-                            <p className="text-gray-600">Choose the handwriting support level for the matching workbook.</p>
+                            <h2 className="text-xl font-semibold text-gray-800">Matching Workbook</h2>
+                            <p className="text-gray-600">We automatically include the workbook that matches your selected pattern.</p>
                         </div>
                         {answers.includeEnglishWorkbook ? (
-                            shouldAskForAssist ? (
-                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                                    <RadioCard
-                                        id="assist-yes"
-                                        name="englishWorkbookAssist"
-                                        value="yes"
-                                        label="Yes"
-                                        description="All rows dotted."
-                                        checked={answers.englishWorkbookAssist === true}
-                                        onChange={() => handleEnglishWorkbookAssistChange(true)}
-                                        onSelect={(_, wasChecked) => {
-                                            if (wasChecked) {
-                                                handleEnglishWorkbookAssistChange(true);
-                                            }
-                                        }}
-                                        theme={theme}
-                                    />
-                                    <RadioCard
-                                        id="assist-no"
-                                        name="englishWorkbookAssist"
-                                        value="no"
-                                        label="No"
-                                        description="Only first 2 rows dotted."
-                                        checked={answers.englishWorkbookAssist === false}
-                                        onChange={() => handleEnglishWorkbookAssistChange(false)}
-                                        onSelect={(_, wasChecked) => {
-                                            if (wasChecked) {
-                                                handleEnglishWorkbookAssistChange(false);
-                                            }
-                                        }}
-                                        theme={theme}
-                                    />
+                            isEnglishWorkbookReady(answers) ? (
+                                <div className={`mt-4 rounded-lg border ${theme.border200} bg-white p-4`}>
+                                    <p className="text-sm text-gray-600">Workbook variant</p>
+                                    <p className="text-base font-semibold text-gray-900">{getEnglishWorkbookSummary(answers)}</p>
                                 </div>
                             ) : (
-                                <p className="mt-4 text-sm text-gray-500">This workbook automatically aligns with your chosen pattern.</p>
+                                <p className="mt-4 text-sm text-gray-500">Select a skill book to view the workbook details.</p>
                             )
                         ) : (
                             <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-600">The English workbook is currently excluded for this class.</p>
                                 <button
                                     type="button"
-                                    onClick={() => setAnswers({ includeEnglishWorkbook: true, englishWorkbookAssist: null })}
+                                    onClick={() => setAnswers({ includeEnglishWorkbook: true })}
                                     className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-md ${theme.bgColor600} text-white ${theme.hoverBg700}`}
                                 >
                                     Add Workbook Back
@@ -1085,7 +1004,6 @@ const QuestionnairePage: React.FC = () => {
                     }
                     setAnswers({
                         mathSkill: skill,
-                        mathWorkbookAssist: null,
                         includeMathWorkbook: true,
                     });
                 };
@@ -1096,13 +1014,6 @@ const QuestionnairePage: React.FC = () => {
                     }
                     setAnswers({
                         mathSkill: null,
-                        mathWorkbookAssist: null,
-                    });
-                };
-
-                const handleMathWorkbookAssistChange = (value: boolean) => {
-                    setAnswers({
-                        mathWorkbookAssist: answers.mathWorkbookAssist === value ? null : value,
                     });
                 };
 
@@ -1135,52 +1046,24 @@ const QuestionnairePage: React.FC = () => {
                     </section>
                     <section className="rounded-xl border border-gray-200 p-6 shadow-sm">
                         <div className="flex flex-col gap-2">
-                            <h2 className="text-xl font-semibold text-gray-800">Writing Assist?</h2>
-                            <p className="text-gray-600">Choose the handwriting support level for the matching workbook.</p>
+                            <h2 className="text-xl font-semibold text-gray-800">Matching Workbook</h2>
+                            <p className="text-gray-600">We automatically include the workbook that matches your number range.</p>
                         </div>
                         {answers.includeMathWorkbook ? (
-                            (currentClass === 'Nursery' || currentClass === 'LKG') && answers.mathSkill ? (
-                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                                    <RadioCard
-                                        id="math-assist-yes"
-                                        name="mathWorkbookAssist"
-                                        value="yes"
-                                        label="Yes"
-                                        description="All rows dotted."
-                                        checked={answers.mathWorkbookAssist === true}
-                                        onChange={() => handleMathWorkbookAssistChange(true)}
-                                        onSelect={(_, wasChecked) => {
-                                            if (wasChecked) {
-                                                handleMathWorkbookAssistChange(true);
-                                            }
-                                        }}
-                                        theme={theme}
-                                    />
-                                    <RadioCard
-                                        id="math-assist-no"
-                                        name="mathWorkbookAssist"
-                                        value="no"
-                                        label="No"
-                                        description="Only first 2 rows dotted."
-                                        checked={answers.mathWorkbookAssist === false}
-                                        onChange={() => handleMathWorkbookAssistChange(false)}
-                                        onSelect={(_, wasChecked) => {
-                                            if (wasChecked) {
-                                                handleMathWorkbookAssistChange(false);
-                                            }
-                                        }}
-                                        theme={theme}
-                                    />
+                            isMathWorkbookReady(answers) ? (
+                                <div className={`mt-4 rounded-lg border ${theme.border200} bg-white p-4`}>
+                                    <p className="text-sm text-gray-600">Workbook variant</p>
+                                    <p className="text-base font-semibold text-gray-900">{getMathWorkbookSummary(answers)}</p>
                                 </div>
                             ) : (
-                                <p className="mt-4 text-sm text-gray-500">This workbook automatically aligns with your chosen number range.</p>
+                                <p className="mt-4 text-sm text-gray-500">Select a skill book to view the workbook details.</p>
                             )
                         ) : (
                             <div className="mt-4 flex flex-col gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-600">The Math workbook is currently excluded for this class.</p>
                                 <button
                                     type="button"
-                                    onClick={() => setAnswers({ includeMathWorkbook: true, mathWorkbookAssist: null })}
+                                    onClick={() => setAnswers({ includeMathWorkbook: true })}
                                     className={`w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-md ${theme.bgColor600} text-white ${theme.hoverBg700}`}
                                 >
                                     Add Workbook Back
