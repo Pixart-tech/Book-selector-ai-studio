@@ -17,9 +17,7 @@ export interface QuestionnaireAnswers {
   classLevel: 'Nursery' | 'LKG' | 'UKG' | null;
   englishSkill: string | null;
   englishSkillWritingFocus: 'Caps' | 'Small' | 'Caps & Small' | null;
-  englishWorkbookAssist: boolean | null;
   includeEnglishWorkbook: boolean;
-  mathWorkbookAssist: boolean | null;
   mathSkill: string | null;
   includeMathWorkbook: boolean;
   assessment: 'Termwise' | 'Annual' | 'Annual (no marks)' | null;
